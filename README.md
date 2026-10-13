@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SafeOrder (dining_tracker)
 
-## Getting Started
+A mobile-first web app for a household to track what each person orders at restaurants and the modifications that avoid their food allergies. The full product spec is in [SPEC.md](SPEC.md).
 
-First, run the development server:
+**Status:** Milestone 1 (Foundation): sign-in, households and invites, profiles, and allergy setup.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Stack
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+React 19 + Vite + TypeScript, Tailwind CSS v4, React Router, TanStack Query, and Supabase (Postgres with row-level security, magic-link auth).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## First-time setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Create a Supabase project** at <https://supabase.com> (the free tier is fine). Save the database password.
+2. **Configure auth** in the Supabase dashboard:
+   - Under **Authentication → URL Configuration**, set **Site URL** to `http://localhost:5173` and add `http://localhost:5173/**` to **Redirect URLs**.
+   - Under **Authentication → Emails → Magic Link**, add the code to the template so people can sign in by typing it (needed for the installed phone app):
+     ```html
+     <h2>Sign in to SafeOrder</h2>
+     <p><a href="{{ .ConfirmationURL }}">Sign in</a></p>
+     <p>Or enter this code: <strong>{{ .Token }}</strong></p>
+     ```
+     Apply the same change to the **Confirm signup** template, which new users receive.
+3. **Add your keys:** copy `.env.example` to `.env.local` and fill in the Project URL and the anon/publishable key from **Project Settings → API Keys**.
+4. **Create the database tables.** Either:
+   - with the CLI (recommended, since later milestones add more migrations):
+     ```
+     npx supabase login
+     npx supabase link --project-ref <your-project-ref>
+     npx supabase db push
+     ```
+   - or paste the contents of `supabase/migrations/20261013000000_initial_schema.sql` into the dashboard's **SQL Editor** and run it.
+5. **Install and run:**
+   ```
+   npm install
+   npm run dev
+   ```
+   Open <http://localhost:5173>. To test on a phone on the same Wi-Fi, run `npm run dev -- --host` and open the Network address it prints.
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
+| Command | What it does |
+|---|---|
+| `npm run dev` | Dev server with hot reload |
+| `npm run build` | Type-check and build to `dist/` |
+| `npm run preview` | Serve the production build locally |
+| `npm run lint` | Lint with oxlint |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Notes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Supabase's built-in email sender is rate-limited to a few emails per hour. If sign-in emails stop arriving while testing, wait, or set up custom SMTP under **Authentication → Emails → SMTP Settings**.
+- Invites don't send email: the app shares an invite message for you to send. The invited person signs in with the invited email and is offered to join.
