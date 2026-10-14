@@ -146,7 +146,7 @@ function Browse({
       {neverVisited.length > 0 && (
         <section>
           <SectionTitle>{recent.length ? 'Other restaurants' : 'Your restaurants'}</SectionTitle>
-          <RestaurantList rows={neverVisited.map((r) => ({ r, detail: r.cuisine ?? undefined }))} index={index} selected={selected} />
+          <RestaurantList rows={neverVisited.map((r) => ({ r }))} index={index} selected={selected} />
         </section>
       )}
 
@@ -173,12 +173,14 @@ function RestaurantList({
     <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface">
       {rows.map(({ r, detail }) => {
         const n = countOrders(index, r.id, selected)
+        // Cuisine first, then the list's own detail (distance, last visit).
+        const line = [r.cuisine, detail].filter(Boolean).join(' · ')
         return (
           <li key={r.id}>
             <Link to={`/restaurants/${r.id}`} className="flex min-h-14 items-center justify-between gap-3 px-4 py-3 hover:bg-surface-2">
               <span className="min-w-0">
                 <span className="block truncate font-medium">{r.name}</span>
-                {detail && <span className="block text-sm text-muted">{detail}</span>}
+                {line && <span className="block text-sm text-muted">{line}</span>}
               </span>
               {n > 0 && <Badge tone="accent">{n} saved</Badge>}
             </Link>
@@ -218,7 +220,7 @@ function SearchResults({ index, query, selected }: { index: BundleIndex; query: 
       {restaurants.length > 0 && (
         <section>
           <SectionTitle>Restaurants</SectionTitle>
-          <RestaurantList rows={restaurants.map((r) => ({ r, detail: r.cuisine ?? undefined }))} index={index} selected={selected} />
+          <RestaurantList rows={restaurants.map((r) => ({ r }))} index={index} selected={selected} />
         </section>
       )}
       {dishes.length > 0 && (

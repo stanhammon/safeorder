@@ -71,3 +71,18 @@ export function usePosition() {
 
   return { coords, status, request }
 }
+
+/**
+ * Link that opens a location in a maps app: the pasted map link if there is
+ * one, else a Google Maps search (no API key) by GPS position or address.
+ */
+export function mapLink(
+  location: { map_url: string | null; address: string | null; lat: number | null; lng: number | null },
+  restaurantName: string,
+): string | null {
+  if (location.map_url) return location.map_url
+  let query: string | null = null
+  if (location.lat != null && location.lng != null) query = `${location.lat},${location.lng}`
+  else if (location.address) query = `${restaurantName}, ${location.address}`
+  return query ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}` : null
+}

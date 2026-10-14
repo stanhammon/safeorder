@@ -150,7 +150,7 @@ function RestaurantPicker({
       // Nearest first when we know where you are, then most recently visited.
       .sort((a, b) => (a.d ?? Infinity) - (b.d ?? Infinity) || b.last.localeCompare(a.last))
       .slice(0, 12)
-      .map(({ r, d }) => ({ r, detail: d != null ? formatDistance(d) : (r.cuisine ?? undefined) }))
+      .map(({ r, d }) => ({ r, detail: d != null ? formatDistance(d) : undefined }))
   }
 
   return (
@@ -166,7 +166,12 @@ function RestaurantPicker({
       {list.length > 0 && (
         <PickList>
           {list.map(({ r, detail }) => (
-            <PickItem key={r.id} onClick={() => onPick(r.id)} title={r.name} detail={detail} />
+            <PickItem
+              key={r.id}
+              onClick={() => onPick(r.id)}
+              title={r.name}
+              detail={[r.cuisine, detail].filter(Boolean).join(' · ') || undefined}
+            />
           ))}
         </PickList>
       )}

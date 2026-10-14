@@ -1,7 +1,7 @@
 import { AverageRating, BackLink, Badge, EmptyState, PersonChips } from '@/components/bits'
 import { Avatar, Button, Card, ErrorText, PageHeader, SectionTitle, Spinner } from '@/components/ui'
 import { useAddLocation, useBundle, useUpdateLocation, type BundleIndex, type LocationInput } from '@/lib/bundle'
-import { distanceMeters, formatDistance, usePosition } from '@/lib/geo'
+import { distanceMeters, formatDistance, mapLink, usePosition } from '@/lib/geo'
 import { averageRating, summarizeMods } from '@/lib/mods'
 import { usePersonFilter } from '@/lib/personFilterContext'
 import { useHouseholdContext, useMembers } from '@/lib/queries'
@@ -32,6 +32,7 @@ export function RestaurantPage() {
     )
   }
 
+  const locations = (index.locationsByRestaurant.get(restaurant.id) ?? []).filter((l) => !l.archived_at)
   const allDishes = index.dishesByRestaurant.get(restaurant.id) ?? []
   const dishes = allDishes.filter((d) => showArchived || !d.archived_at)
   const archivedCount = allDishes.filter((d) => d.archived_at).length
@@ -58,10 +59,11 @@ export function RestaurantPage() {
           {restaurant.is_chain && <Badge>Chain</Badge>}
           {restaurant.archived_at && <Badge tone="warn">Archived</Badge>}
         </div>
+        {!restaurant.is_chain && <SingleLocation location={locations[0]} restaurantName={restaurant.name} />}
         {restaurant.notes && <p className="mt-2">{restaurant.notes}</p>}
       </div>
 
-      {restaurant.is_chain && <ChainLocations restaurantId={restaurant.id} index={index} />}
+      {restaurant.is_chain && <ChainLocations restaurantId={restaurant.id} restaurantName={restaurant.name} index={index} />}
 
       <div className="mb-4">
         <PersonChips members={members} selected={selected} onSelect={setSelected} allowEveryone meId={profile.id} />
@@ -201,7 +203,15 @@ function DishRow({
   )
 }
 
-function ChainLocations({ restaurantId, index }: { restaurantId: string; index: BundleIndex }) {
+function ChainLocations({
+  restaurantId,
+  restaurantName,
+  index,
+}: {
+  restaurantId: string
+  restaurantName: string
+  index: BundleIndex
+}) {
   const { coords } = usePosition()
   const [adding, setAdding] = useState(false)
   const [draft, setDraft] = useState<LocationInput>({})
@@ -236,6 +246,7 @@ function ChainLocations({ restaurantId, index }: { restaurantId: string; index: 
           <LocationRow
             key={l.id}
             location={l}
+            restaurantName={restaurantName}
             distance={d}
             onArchive={() =>
               confirm(`Archive ${l.label || l.address || 'this location'}?`) &&
@@ -266,27 +277,70 @@ function ChainLocations({ restaurantId, index }: { restaurantId: string; index: 
   )
 }
 
-function LocationRow({ location: l, distance, onArchive }: { location: Location; distance: number | null; onArchive: () => void }) {
+function LocationRow({
+  location: l,
+  restaurantName,
+  distance,
+  onArchive,
+}: {
+  location: Location
+  restaurantName: string
+  distance: number | null
+  onArchive: () => void
+}) {
   return (
     <li className="flex items-start justify-between gap-2">
       <div className="min-w-0">
         <div className="font-medium">{l.label || l.address || 'Unnamed location'}</div>
         <div className="text-sm text-muted">
           {[l.label && l.address, distance != null && formatDistance(distance)].filter(Boolean).join(' · ')}
-          {l.map_url && (
-            <>
-              {' '}
-              <a href={l.map_url} target="_blank" rel="noreferrer" className="text-accent">
-                Map
-              </a>
-            </>
-          )}
         </div>
         {l.notes && <div className="text-sm">{l.notes}</div>}
+        <MapButton location={l} restaurantName={restaurantName} compact />
       </div>
       <button type="button" className="min-h-10 shrink-0 text-sm text-muted" onClick={onArchive}>
         Archive
       </button>
     </li>
+  )
+}
+
+/** Address and map button under the name of a single-location restaurant. */
+function SingleLocation({ location, restaurantName }: { location: Location | undefined; restaurantName: string }) {
+  if (!location) return null
+  const link = mapLink(location, restaurantName)
+  if (!location.address && !link) return null
+  return (
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-surface-2 px-3 py-2">
+      <span className="min-w-0">{location.address ?? <span className="text-muted">No address saved</span>}</span>
+      <MapButton location={location} restaurantName={restaurantName} />
+    </div>
+  )
+}
+
+function MapButton({
+  location,
+  restaurantName,
+  compact = false,
+}: {
+  location: Location
+  restaurantName: string
+  compact?: boolean
+}) {
+  const link = mapLink(location, restaurantName)
+  if (!link) return null
+  return (
+    <a
+      href={link}
+      target="_blank"
+      rel="noreferrer"
+      className={
+        compact
+          ? 'inline-flex min-h-10 items-center text-sm font-medium text-accent'
+          : 'inline-flex min-h-10 shrink-0 items-center rounded-xl border border-border bg-surface px-3 text-sm font-medium text-accent'
+      }
+    >
+      📍 Show on map
+    </a>
   )
 }

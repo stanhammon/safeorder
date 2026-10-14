@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { parseMoney } from '../format'
-import { distanceMeters } from '../geo'
+import { distanceMeters, mapLink } from '../geo'
 import { averageRating, frequentMods, sameMods, summarizeMods } from '../mods'
 import type { ModDraft } from '../types'
 
@@ -57,5 +57,17 @@ describe('averageRating', () => {
   it('averages rated meals only', () => {
     expect(averageRating([{ taste_rating: 5 }, { taste_rating: null }, { taste_rating: 4 }])).toEqual({ average: 4.5, count: 2 })
     expect(averageRating([{ taste_rating: null }])).toBeNull()
+  })
+})
+
+describe('mapLink', () => {
+  const base = { map_url: null, address: null, lat: null, lng: null }
+  it('prefers a pasted link, then coordinates, then the address', () => {
+    expect(mapLink({ ...base, map_url: 'https://maps.app.goo.gl/x', lat: 1, lng: 2 }, 'Cafe')).toBe('https://maps.app.goo.gl/x')
+    expect(mapLink({ ...base, lat: 40.5, lng: -74.25, address: '1 Main St' }, 'Cafe')).toBe(
+      'https://www.google.com/maps/search/?api=1&query=40.5%2C-74.25',
+    )
+    expect(mapLink({ ...base, address: '1 Main St' }, 'Cafe')).toContain('query=Cafe%2C%201%20Main%20St')
+    expect(mapLink(base, 'Cafe')).toBeNull()
   })
 })
