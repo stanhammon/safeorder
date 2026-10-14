@@ -1,6 +1,6 @@
 import { OutcomePicker, PersonChips, StarRating } from '@/components/bits'
 import { Button, Card, ErrorText, Field, Input, PageHeader, SectionTitle, Spinner, Textarea } from '@/components/ui'
-import { cleanMods, useBundle, useCreateDish, useLogMeal, type BundleIndex } from '@/lib/bundle'
+import { cleanMods, useBundle, useClearReactionFlag, useCreateDish, useLogMeal, type BundleIndex } from '@/lib/bundle'
 import { formatMoney, parseMoney, todayISO } from '@/lib/format'
 import { distanceMeters, formatDistance, usePosition, type Coords } from '@/lib/geo'
 import { sameMods, summarizeMods } from '@/lib/mods'
@@ -9,7 +9,7 @@ import { useHousehold, useHouseholdContext, useMembers } from '@/lib/queries'
 import { useSearch } from '@/lib/search'
 import { errorMessage } from '@/lib/supabase'
 import type { Dish, MealOutcome, ModDraft, Profile, Restaurant } from '@/lib/types'
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { ModEditor } from '../orders/ModEditor'
 import { useModContext } from '../orders/useModContext'
@@ -283,6 +283,7 @@ function MealForm({
   const { householdId } = useHouseholdContext()
   const household = useHousehold(householdId).data
   const logMeal = useLogMeal()
+  const clearFlag = useClearReactionFlag()
   const ctx = useModContext(index, person.id)
 
   const order = index.orderByDishPerson.get(`${dish.id}:${person.id}`)
@@ -298,6 +299,7 @@ function MealForm({
   const [date, setDate] = useState(todayISO())
   const [locationId, setLocationId] = useState(() => defaultLocation(index, restaurant.id, coords))
   const [confirming, setConfirming] = useState(false)
+  const [offerClear, setOfferClear] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const changed = Boolean(order) && !sameMods(cleanMods(mods), cleanMods(savedMods))
@@ -312,7 +314,11 @@ function MealForm({
     return null
   }
 
+  // A ref, not state: two taps in the same frame would both see stale state.
+  const submitting = useRef(false)
+
   function onSave() {
+    if (submitting.current) return
     const problem = validate()
     if (problem) return setError(problem)
     setError(null)
@@ -321,6 +327,8 @@ function MealForm({
   }
 
   async function submit(updateSafeOrder: boolean) {
+    if (submitting.current) return
+    submitting.current = true
     setConfirming(false)
     try {
       await logMeal.mutateAsync({
@@ -341,8 +349,11 @@ function MealForm({
         },
         updateSafeOrder,
       })
-      navigate(`/dishes/${dish.id}`, { replace: true })
+      // SPEC §5.4: a fine meal doesn't clear a reaction flag by itself; ask.
+      if (order?.reaction_flag && outcome === 'fine') setOfferClear(true)
+      else navigate(`/dishes/${dish.id}`, { replace: true })
     } catch (e) {
+      submitting.current = false
       setError(errorMessage(e))
     }
   }
@@ -418,6 +429,36 @@ function MealForm({
       <Button className="w-full" onClick={onSave} disabled={logMeal.isPending}>
         {logMeal.isPending ? 'Saving…' : 'Save meal'}
       </Button>
+
+      {offerClear && order && (
+        <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/40 p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="clear-flag-title">
+          <div className="w-full max-w-md space-y-4 rounded-2xl bg-surface p-5 shadow-xl">
+            <h2 id="clear-flag-title" className="text-lg font-semibold">
+              Last time there was a reaction. Clear the flag?
+            </h2>
+            <p className="text-muted">
+              {dish.name} is flagged for a {order.reaction_flag === 'bad' ? 'bad' : 'mild'} reaction. Clear it now that
+              this meal went fine?
+            </p>
+            <div className="flex flex-col gap-2">
+              <Button
+                disabled={clearFlag.isPending}
+                onClick={() =>
+                  clearFlag.mutate(
+                    { orderId: order.id, note: `Ate it again on ${date} without problems.` },
+                    { onSettled: () => navigate(`/dishes/${dish.id}`, { replace: true }) },
+                  )
+                }
+              >
+                Clear reaction flag
+              </Button>
+              <Button variant="secondary" onClick={() => navigate(`/dishes/${dish.id}`, { replace: true })}>
+                Keep the flag
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirming && (
         <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/40 p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="update-order-title">

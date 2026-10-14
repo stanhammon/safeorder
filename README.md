@@ -2,7 +2,7 @@
 
 A mobile-first web app for a household to track what each person orders at restaurants and the modifications that avoid their food allergies. The full product spec is in [SPEC.md](SPEC.md).
 
-**Status:** Milestone 2 (Core logging): restaurants and chain locations, dishes with allergen tags, saved orders, meal logging, search and Nearby. Milestone 1 covered sign-in, sharing, profiles and allergies.
+**Status:** Milestone 3 (Safety): full-screen server and allergy cards (English/Spanish), coverage warnings, re-confirm badges and reaction flags. Earlier milestones covered sign-in, sharing, allergies, restaurants, dishes, saved orders and meal logging.
 
 ## Stack
 

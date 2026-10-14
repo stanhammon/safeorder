@@ -130,7 +130,7 @@ export function useUpdateMyProfile() {
   const userId = useUserId()
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (patch: Partial<Pick<Profile, 'display_name' | 'color' | 'chef_card_message' | 'server_card_theme' | 'disclaimer_ack_at'>>) =>
+    mutationFn: (patch: Partial<Pick<Profile, 'display_name' | 'color' | 'chef_card_message' | 'chef_card_message_es' | 'server_card_theme' | 'disclaimer_ack_at'>>) =>
       unwrap(supabase.from('profiles').update(patch).eq('id', userId)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: keys.profile(userId) })
@@ -243,8 +243,16 @@ export function useCreateAllergen(householdId: string) {
 export function useRenameAllergen(householdId: string) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (args: { id: string; name: string }) =>
-      unwrap(supabase.from('allergens').update({ name: args.name.trim() }).eq('id', args.id)),
+    mutationFn: (args: { id: string; name?: string; name_es?: string | null }) =>
+      unwrap(
+        supabase
+          .from('allergens')
+          .update({
+            ...(args.name !== undefined && { name: args.name.trim() }),
+            ...(args.name_es !== undefined && { name_es: args.name_es?.trim() || null }),
+          })
+          .eq('id', args.id),
+      ),
     onSuccess: () => qc.invalidateQueries({ queryKey: keys.allergens(householdId) }),
   })
 }

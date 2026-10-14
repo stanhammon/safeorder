@@ -1,13 +1,16 @@
 import { BackLink, EmptyState, OutcomeBadge, StarRating } from '@/components/bits'
-import { Avatar, Disclaimer, ErrorText, PageHeader, SectionTitle, Spinner } from '@/components/ui'
-import { useBundle, useDeleteMeal, type BundleIndex } from '@/lib/bundle'
+import { Avatar, Button, Disclaimer, ErrorText, PageHeader, SectionTitle, Spinner, Textarea } from '@/components/ui'
+import { useBundle, useClearReactionFlag, useConfirmWithStaff, useDeleteMeal, type BundleIndex } from '@/lib/bundle'
 import { formatDate, formatMoney } from '@/lib/format'
 import { usePersonFilter } from '@/lib/personFilterContext'
 import { useAllergens, useHouseholdContext, useMembers } from '@/lib/queries'
 import { errorMessage } from '@/lib/supabase'
-import type { Dish, Meal, Profile } from '@/lib/types'
+import type { Coverage } from '@/lib/safety'
+import type { Dish, Meal, Profile, SafeOrder } from '@/lib/types'
+import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { ModList } from '../orders/ModList'
+import { useSafety } from '../orders/useSafety'
 
 export function DishPage() {
   const { dishId } = useParams()
@@ -134,28 +137,32 @@ function PersonOrder({
   const mods = order ? (index.modsByOrder.get(order.id) ?? []) : []
   const meals = (index.mealsByDish.get(dish.id) ?? []).filter((m) => m.profile_id === person.id)
   const whose = isMe ? 'Your order' : `${person.display_name}’s order`
+  const getSafety = useSafety(index)
+  const safety = order ? getSafety(order) : null
 
   return (
     <>
       <section className="mb-6 space-y-3">
         <SectionTitle>{whose}</SectionTitle>
-        {order?.reaction_flag && (
-          <p
-            className={`rounded-xl px-3 py-2 text-sm font-medium ${
-              order.reaction_flag === 'bad' ? 'bg-danger-surface text-danger' : 'bg-warn-surface text-warn'
-            }`}
-          >
-            {order.reaction_flag === 'bad' ? 'Bad reaction' : 'Mild reaction'} logged
-            {order.reaction_flag_set_at ? ` on ${formatDate(order.reaction_flag_set_at)}` : ''}. Check with staff before
-            ordering this again.
-          </p>
+        {order && safety && (
+          <>
+            {order.reaction_flag && <ReactionBanner order={order} />}
+            <CoveragePanel dish={dish} coverage={safety.coverage} allergenName={allergenName} name={isMe ? 'your' : `${person.display_name}’s`} />
+            {safety.stale && <StaleBanner order={order} />}
+          </>
         )}
         {order ? (
           <>
+            <Link
+              to={`/dishes/${dish.id}/card/${person.id}`}
+              className="flex min-h-14 items-center justify-center gap-2 rounded-xl bg-text px-4 text-lg font-semibold text-bg"
+            >
+              Show server
+            </Link>
             <ModList mods={mods} allergenName={allergenName} />
             {order.note && <p className="text-sm">{order.note}</p>}
-            {order.last_verified_at && (
-              <p className="text-sm text-muted">Last eaten without problems {formatDate(order.last_verified_at)}</p>
+            {order.last_verified_at && !safety?.stale && (
+              <p className="text-sm text-muted">Last confirmed {formatDate(order.last_verified_at)}</p>
             )}
           </>
         ) : (
@@ -215,7 +222,7 @@ function MealRow({ meal, index, allergenName }: { meal: Meal; index: BundleIndex
           <ModList mods={meal.mods_snapshot} allergenName={allergenName} />
         </div>
       </details>
-      {meal.outcome_notes && <p className="mt-2 text-sm">{meal.outcome_notes}</p>}
+      {meal.outcome_notes && <p className="mt-2 text-sm whitespace-pre-line">{meal.outcome_notes}</p>}
       {meal.notes && <p className="mt-2 text-sm">{meal.notes}</p>}
       <div className="mt-2 text-right">
         <button
@@ -228,5 +235,122 @@ function MealRow({ meal, index, allergenName }: { meal: Meal; index: BundleIndex
         </button>
       </div>
     </li>
+  )
+}
+
+/** SPEC §5.3: never green. The best state is "all tagged allergens addressed". */
+function CoveragePanel({
+  dish,
+  coverage,
+  allergenName,
+  name,
+}: {
+  dish: Dish
+  coverage: Coverage
+  allergenName: Map<string, string>
+  name: string
+}) {
+  const names = (ids: string[]) => ids.map((id) => allergenName.get(id) ?? '?').join(', ')
+  if (coverage.status === 'not_recorded') {
+    return (
+      <p className="rounded-xl bg-surface-2 px-3 py-2 text-sm text-muted">
+        Allergens not recorded for this dish, so the app can’t check it.{' '}
+        <Link to={`/dishes/${dish.id}/edit`} className="text-accent">
+          Tag allergens
+        </Link>
+      </p>
+    )
+  }
+  return (
+    <div className="space-y-2">
+      {coverage.uncoveredAllergies.map((id) => (
+        <p key={id} role="alert" className="rounded-xl bg-danger-surface px-3 py-2 text-sm font-medium text-danger">
+          ⚠ Contains {allergenName.get(id) ?? 'an allergen'}: no change addresses it.
+        </p>
+      ))}
+      {coverage.uncoveredPreferences.length > 0 && (
+        <p className="rounded-xl bg-surface-2 px-3 py-2 text-sm text-muted">
+          Also contains {names(coverage.uncoveredPreferences)} ({name} preference).
+        </p>
+      )}
+      {coverage.status === 'addressed' && (
+        <p className="rounded-xl bg-surface-2 px-3 py-2 text-sm">
+          {coverage.relevantAllergies.length
+            ? `All tagged allergens addressed (${names(coverage.relevantAllergies)}).`
+            : `None of ${name} allergies are tagged on this dish.`}{' '}
+          <span className="text-muted">Based only on what you recorded. Confirm with staff.</span>
+        </p>
+      )}
+    </div>
+  )
+}
+
+function StaleBanner({ order }: { order: SafeOrder }) {
+  const confirmIt = useConfirmWithStaff()
+  const since = order.last_verified_at ?? order.created_at
+  return (
+    <div className="space-y-2 rounded-xl bg-warn-surface px-3 py-2 text-sm text-warn">
+      <p className="font-medium">
+        Re-confirm with staff: {order.last_verified_at ? 'last confirmed' : 'saved'} {formatDate(since)}. Recipes change.
+      </p>
+      <button
+        type="button"
+        className="min-h-10 font-semibold underline"
+        disabled={confirmIt.isPending}
+        onClick={() => confirmIt.mutate(order.id)}
+      >
+        ✓ Confirmed with staff today
+      </button>
+    </div>
+  )
+}
+
+function ReactionBanner({ order }: { order: SafeOrder }) {
+  const clear = useClearReactionFlag()
+  const [open, setOpen] = useState(false)
+  const [note, setNote] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const bad = order.reaction_flag === 'bad'
+
+  return (
+    <div className={`space-y-2 rounded-xl px-3 py-2 text-sm ${bad ? 'bg-danger-surface text-danger' : 'bg-warn-surface text-warn'}`} role="alert">
+      <p className="font-medium">
+        {bad ? 'Bad reaction' : 'Mild reaction'} logged
+        {order.reaction_flag_set_at ? ` on ${formatDate(order.reaction_flag_set_at)}` : ''}. Check with staff before
+        ordering this again.
+      </p>
+      {open ? (
+        <div className="space-y-2 text-text">
+          <Textarea
+            rows={2}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Why it’s OK now, e.g. turned out to be something else"
+          />
+          <ErrorText error={error} />
+          <div className="flex gap-2">
+            <Button variant="secondary" className="min-h-10" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="min-h-10 flex-1"
+              disabled={clear.isPending}
+              onClick={() =>
+                clear.mutate(
+                  { orderId: order.id, note },
+                  { onSuccess: () => setOpen(false), onError: (e) => setError(errorMessage(e)) },
+                )
+              }
+            >
+              Clear reaction flag
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" className="min-h-10 font-semibold underline" onClick={() => setOpen(true)}>
+          Clear reaction flag…
+        </button>
+      )}
+    </div>
   )
 }

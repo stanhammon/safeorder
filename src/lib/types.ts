@@ -17,6 +17,7 @@ export interface Profile {
   display_name: string
   color: string
   chef_card_message: string | null
+  chef_card_message_es: string | null
   server_card_theme: 'light' | 'dark'
   disclaimer_ack_at: string | null
 }
@@ -27,6 +28,8 @@ export interface Allergen {
   name: string
   is_preset: boolean
   sort_order: number
+  /** Optional Spanish name for custom allergens (presets are translated in code). */
+  name_es: string | null
 }
 
 export interface PersonAllergen {
@@ -140,6 +143,7 @@ export interface Meal {
   notes: string | null
   mods_snapshot: ModDraft[]
   created_at: string
+  created_by: string | null
 }
 
 export interface Bundle {

@@ -251,3 +251,19 @@ export const useLogMeal = () =>
 
 export const useDeleteMeal = () =>
   useBundleMutation((id: string) => supabase.from('meals').delete().eq('id', id))
+
+/** "Confirmed with staff today" (SPEC §5.2). */
+export const useConfirmWithStaff = () =>
+  useBundleMutation((orderId: string) =>
+    supabase.from('safe_orders').update({ last_verified_at: new Date().toISOString() }).eq('id', orderId),
+  )
+
+export const useClearReactionFlag = () =>
+  useBundleMutation((args: { orderId: string; note: string }) =>
+    supabase.rpc('clear_reaction_flag', { p_safe_order_id: args.orderId, p_note: args.note }),
+  )
+
+export const useSetMealOutcome = () =>
+  useBundleMutation((args: { mealId: string; outcome: Meal['outcome']; notes: string }) =>
+    supabase.rpc('set_meal_outcome', { p_meal_id: args.mealId, p_outcome: args.outcome ?? '', p_outcome_notes: args.notes }),
+  )

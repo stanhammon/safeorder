@@ -3,12 +3,15 @@ import { Avatar, Button, Card, ErrorText, PageHeader, SectionTitle, Spinner } fr
 import { useAddLocation, useBundle, useUpdateLocation, type BundleIndex, type LocationInput } from '@/lib/bundle'
 import { distanceMeters, formatDistance, mapLink, usePosition } from '@/lib/geo'
 import { averageRating, summarizeMods } from '@/lib/mods'
+import { safetyRank } from '@/lib/safety'
 import { usePersonFilter } from '@/lib/personFilterContext'
 import { useHouseholdContext, useMembers } from '@/lib/queries'
 import { errorMessage } from '@/lib/supabase'
 import type { Dish, Location, Profile } from '@/lib/types'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
+import { OrderBadges } from '../orders/OrderBadges'
+import { useSafety } from '../orders/useSafety'
 import { LocationFields } from './LocationFields'
 
 export function RestaurantPage() {
@@ -19,6 +22,7 @@ export function RestaurantPage() {
   const { selected, setSelected } = usePersonFilter()
   const [showArchived, setShowArchived] = useState(false)
   const [showOthers, setShowOthers] = useState(false)
+  const getSafety = useSafety(index)
 
   if (isPending) return <Spinner />
   if (error || !index) return <ErrorText error={errorMessage(error)} />
@@ -40,7 +44,15 @@ export function RestaurantPage() {
     selected === 'everyone'
       ? (index.ordersByDish.get(d.id)?.length ?? 0) > 0
       : index.orderByDishPerson.has(`${d.id}:${selected}`)
-  const yours = dishes.filter(hasOrderFor)
+  // SPEC §7.6: fresh orders first, then stale, then uncovered, then reaction-flagged.
+  const rankDish = (d: Dish) =>
+    Math.min(
+      ...(selected === 'everyone'
+        ? (index.ordersByDish.get(d.id) ?? [])
+        : [index.orderByDishPerson.get(`${d.id}:${selected}`)!]
+      ).map((o) => safetyRank(getSafety(o))),
+    )
+  const yours = dishes.filter(hasOrderFor).sort((a, b) => rankDish(a) - rankDish(b) || a.name.localeCompare(b.name))
   const others = dishes.filter((d) => !hasOrderFor(d))
   const whose = selected === 'everyone' ? 'Saved orders' : selected === profile.id ? 'Your orders here' : `${members.find((m) => m.id === selected)?.display_name ?? 'Their'}’s orders here`
 
@@ -151,6 +163,7 @@ function DishRow({
   members: Profile[]
 }) {
   const navigate = useNavigate()
+  const getSafety = useSafety(index)
   const orders =
     selected === 'everyone'
       ? (index.ordersByDish.get(dish.id) ?? [])
@@ -173,15 +186,9 @@ function DishRow({
             return (
               <li key={o.id} className="flex items-start gap-2 text-sm text-muted">
                 {selected === 'everyone' && person && <Avatar name={person.display_name} color={person.color} size="sm" />}
-                <span className="pt-1">
-                  {summarizeMods(index.modsByOrder.get(o.id) ?? [])}
-                  {o.reaction_flag && (
-                    <span className="ml-2">
-                      <Badge tone={o.reaction_flag === 'bad' ? 'danger' : 'warn'}>
-                        {o.reaction_flag === 'bad' ? 'Bad reaction' : 'Mild reaction'}
-                      </Badge>
-                    </span>
-                  )}
+                <span className="space-y-1 pt-1">
+                  <span className="block">{summarizeMods(index.modsByOrder.get(o.id) ?? [])}</span>
+                  <OrderBadges safety={getSafety(o)} />
                 </span>
               </li>
             )
@@ -189,7 +196,14 @@ function DishRow({
         </ul>
       </Link>
       {selected !== 'everyone' && (
-        <div className="border-t border-border px-4 py-2">
+        <div className="flex gap-4 border-t border-border px-4 py-2">
+          <button
+            type="button"
+            className="min-h-10 text-sm font-semibold text-accent"
+            onClick={() => navigate(`/dishes/${dish.id}/card/${selected}`)}
+          >
+            Show server
+          </button>
           <button
             type="button"
             className="min-h-10 text-sm font-medium text-accent"

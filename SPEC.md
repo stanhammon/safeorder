@@ -363,7 +363,8 @@ When the flow is launched from Dish detail, steps 1–3 are skipped.
 **Server card (per dish)**
 - Full-screen and high contrast (black on white or white on black, user's choice), with a minimum font size of 28 px and auto-fit.
 - Contents: "**I have food allergies**", the person's allergy list (only `allergy` kind), the dish name, the mods as imperative short lines, any `ask_kitchen` items as questions, and a footer line: "Please tell me if this can't be done safely."
-- Uses the Screen Wake Lock API while open. Supports landscape rotation and tap-to-dismiss with a confirmation so it doesn't close by accident.
+- Uses the Screen Wake Lock API while open. Supports landscape rotation. As built, it closes with a clear **Done** button rather than tap-to-dismiss, so it can't close by accident.
+- **Language (added 2026-10-15):** a small **Español / English** pill at the top-right of the card switches the card language. The choice is remembered on that device. Fixed wording, change verbs ("Sin…", "Cambiar … por …", "… aparte") and preset allergen names are translated. Free text (dish names, items, notes) stays as typed, and the card then says "Algunos detalles están en inglés." Custom allergens can have an optional Spanish name (`allergens.name_es`, edited in Settings), and the chef message can have an optional Spanish version (`profiles.chef_card_message_es`).
 - A brightness tip ("Turn brightness up") appears the first time only.
 
 **Chef card (general)**
@@ -520,7 +521,7 @@ supabase/
 - Places/maps API integration, reverse geocoding, or map views.
 - Ingredient databases, menu scraping, or AI allergen detection.
 - Push notifications.
-- Translation of server/chef cards. This is a strong v2 candidate: a preset translated phrase set per allergen.
+- Languages beyond English and Spanish, and machine translation of free text on the cards.
 - Native apps (the PWA is installable on iOS and Android).
 - Multiple households per user.
 - Public reviews or social features beyond read-only share links.

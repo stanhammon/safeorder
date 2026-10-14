@@ -1,4 +1,5 @@
 import { LoginPage } from '@/features/auth/LoginPage'
+import { ChefCardPage, ServerCardPage } from '@/features/cards/CardPages'
 import { DishFormPage } from '@/features/dishes/DishFormPage'
 import { DishPage } from '@/features/dishes/DishPage'
 import { SafeOrderEditPage } from '@/features/dishes/SafeOrderEditPage'
@@ -31,8 +32,10 @@ export const router = createBrowserRouter([
           { path: 'dishes/:dishId', element: <DishPage /> },
           { path: 'dishes/:dishId/edit', element: <DishFormPage /> },
           { path: 'dishes/:dishId/order/:personId', element: <SafeOrderEditPage /> },
+          { path: 'dishes/:dishId/card/:personId', element: <ServerCardPage /> },
           { path: 'people', element: <PeoplePage /> },
           { path: 'people/:personId', element: <PersonPage /> },
+          { path: 'people/:personId/card', element: <ChefCardPage /> },
           { path: 'settings', element: <SettingsPage /> },
         ],
       },

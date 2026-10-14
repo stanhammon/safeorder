@@ -6,11 +6,15 @@ import { distanceMeters, formatDistance, usePosition, type Coords } from '@/lib/
 import { summarizeMods } from '@/lib/mods'
 import { usePersonFilter, type PersonSelection } from '@/lib/personFilterContext'
 import { useHouseholdContext, useMembers } from '@/lib/queries'
+import { safetyRank } from '@/lib/safety'
 import { useSearch } from '@/lib/search'
 import { errorMessage } from '@/lib/supabase'
 import type { Restaurant } from '@/lib/types'
 import { useState } from 'react'
 import { Link } from 'react-router'
+import { OrderBadges } from '../orders/OrderBadges'
+import { useSafety } from '../orders/useSafety'
+import { OutcomeReminders } from './OutcomeReminders'
 
 const NEARBY_METERS = 2000
 
@@ -53,7 +57,10 @@ export function HomePage() {
           </Link>
         </EmptyState>
       ) : (
-        <Browse index={index} selected={selected} position={position} />
+        <>
+          <OutcomeReminders index={index} />
+          <Browse index={index} selected={selected} position={position} />
+        </>
       )}
 
       <div className="mt-8">
@@ -183,6 +190,7 @@ function RestaurantList({
 
 function SearchResults({ index, query, selected }: { index: BundleIndex; query: string; selected: PersonSelection }) {
   const search = useSearch(index)
+  const getSafety = useSafety(index)
   const hits = search(query)
   const restaurants = hits
     .filter((h) => h.kind === 'restaurant')
@@ -193,7 +201,12 @@ function SearchResults({ index, query, selected }: { index: BundleIndex; query: 
   // "Safe for person X": dishes with that person's saved order come first.
   const orderFor = (dishId: string) =>
     selected === 'everyone' ? index.ordersByDish.get(dishId)?.[0] : index.orderByDishPerson.get(`${dishId}:${selected}`)
-  dishes.sort((a, b) => Number(Boolean(orderFor(b.id))) - Number(Boolean(orderFor(a.id))))
+  // Then SPEC §7.6 order among those: fresh, stale, uncovered, reaction-flagged.
+  const rank = (dishId: string) => {
+    const o = orderFor(dishId)
+    return o ? safetyRank(getSafety(o)) : 10
+  }
+  dishes.sort((a, b) => rank(a.id) - rank(b.id))
 
   if (!restaurants.length && !dishes.length) {
     return (
@@ -228,6 +241,11 @@ function SearchResults({ index, query, selected }: { index: BundleIndex; query: 
                       <span className="mt-1 block text-sm">
                         {order ? summarizeMods(index.modsByOrder.get(order.id) ?? []) : <span className="text-muted">No saved order</span>}
                       </span>
+                      {order && (
+                        <span className="mt-1 block">
+                          <OrderBadges safety={getSafety(order)} />
+                        </span>
+                      )}
                     </Link>
                   </Card>
                 </li>

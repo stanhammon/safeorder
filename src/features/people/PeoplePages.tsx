@@ -97,19 +97,28 @@ export function PersonPage() {
         <h1 className="text-2xl font-semibold tracking-tight">{person.display_name}</h1>
       </div>
 
+      <Link
+        to={`/people/${person.id}/card`}
+        className="mb-6 flex min-h-14 items-center justify-center rounded-xl bg-text px-4 text-lg font-semibold text-bg"
+      >
+        Show allergy card
+      </Link>
+
       <SectionTitle>Allergies & preferences</SectionTitle>
       <AllergyEditor householdId={householdId} profileId={person.id} />
 
-      {isMe && <ChefMessage initial={person.chef_card_message ?? ''} />}
+      {isMe && <ChefMessage initial={person.chef_card_message ?? ''} initialEs={person.chef_card_message_es ?? ''} />}
     </>
   )
 }
 
-function ChefMessage({ initial }: { initial: string }) {
+function ChefMessage({ initial, initialEs }: { initial: string; initialEs: string }) {
   const update = useUpdateMyProfile()
   const [value, setValue] = useState(initial)
+  const [valueEs, setValueEs] = useState(initialEs)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const unchanged = value === initial && valueEs === initialEs
 
   return (
     <Card className="mt-6 space-y-3">
@@ -119,20 +128,38 @@ function ChefMessage({ initial }: { initial: string }) {
         rows={3}
         maxLength={500}
         value={value}
+        aria-label="Message in English"
         onChange={(e) => {
           setValue(e.target.value)
           setSaved(false)
         }}
         placeholder="e.g. Even a small amount can make me very ill. Please use clean utensils and surfaces."
       />
+      <label className="block space-y-1.5">
+        <span className="text-sm font-medium">In Spanish (optional)</span>
+        <Textarea
+          rows={3}
+          maxLength={500}
+          value={valueEs}
+          lang="es"
+          onChange={(e) => {
+            setValueEs(e.target.value)
+            setSaved(false)
+          }}
+          placeholder="e.g. Incluso una pequeña cantidad me puede enfermar gravemente. Por favor, use utensilios y superficies limpios."
+        />
+        <span className="block text-sm text-muted">
+          Shown when the card is switched to Spanish. If left blank, the English message is shown.
+        </span>
+      </label>
       <ErrorText error={error} />
       <div className="flex items-center gap-3">
         <Button
           variant="secondary"
-          disabled={update.isPending || value === initial}
+          disabled={update.isPending || unchanged}
           onClick={() =>
             update.mutate(
-              { chef_card_message: value.trim() || null },
+              { chef_card_message: value.trim() || null, chef_card_message_es: valueEs.trim() || null },
               { onSuccess: () => setSaved(true), onError: (e) => setError(errorMessage(e)) },
             )
           }

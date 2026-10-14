@@ -360,23 +360,38 @@ function AllergenSection({ householdId }: { householdId: string }) {
         ) : (
           <ul className="space-y-2">
             {custom.map((a) => (
-              <li key={a.id} className="flex gap-2">
+              <li key={a.id} className="space-y-2 rounded-xl border border-border p-2">
+                <div className="flex gap-2">
+                  <Input
+                    key={a.name}
+                    defaultValue={a.name}
+                    maxLength={40}
+                    aria-label={`Rename ${a.name}`}
+                    onBlur={(e) => {
+                      const v = e.target.value.trim()
+                      if (v && v !== a.name) rename.mutate({ id: a.id, name: v }, { onError })
+                    }}
+                  />
+                  <Button
+                    variant="danger"
+                    onClick={() => confirm(`Delete “${a.name}”?`) && remove.mutate(a.id, { onError })}
+                  >
+                    Delete
+                  </Button>
+                </div>
                 <Input
-                  key={a.name}
-                  defaultValue={a.name}
-                  maxLength={40}
-                  aria-label={`Rename ${a.name}`}
+                  key={`es-${a.name_es ?? ''}`}
+                  defaultValue={a.name_es ?? ''}
+                  maxLength={60}
+                  lang="es"
+                  className="min-h-10 text-sm"
+                  placeholder="Spanish name for allergy cards (optional)"
+                  aria-label={`Spanish name for ${a.name}`}
                   onBlur={(e) => {
                     const v = e.target.value.trim()
-                    if (v && v !== a.name) rename.mutate({ id: a.id, name: v }, { onError })
+                    if (v !== (a.name_es ?? '')) rename.mutate({ id: a.id, name_es: v || null }, { onError })
                   }}
                 />
-                <Button
-                  variant="danger"
-                  onClick={() => confirm(`Delete “${a.name}”?`) && remove.mutate(a.id, { onError })}
-                >
-                  Delete
-                </Button>
               </li>
             ))}
           </ul>
