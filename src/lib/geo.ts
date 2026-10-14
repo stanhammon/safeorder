@@ -56,16 +56,25 @@ export function usePosition() {
   useEffect(() => {
     if (!('geolocation' in navigator) || !navigator.permissions) return
     let cancelled = false
+    let permission: PermissionStatus | null = null
+    const sync = () => {
+      if (cancelled || !permission) return
+      if (permission.state === 'granted') request()
+      else if (permission.state === 'denied') setStatus('denied')
+      else setStatus('idle')
+    }
     navigator.permissions
       .query({ name: 'geolocation' })
       .then((p) => {
-        if (cancelled) return
-        if (p.state === 'granted') request()
-        else if (p.state === 'denied') setStatus('denied')
+        permission = p
+        sync()
+        // Re-allowing location in browser settings takes effect without a reload.
+        p.addEventListener('change', sync)
       })
       .catch(() => {})
     return () => {
       cancelled = true
+      permission?.removeEventListener('change', sync)
     }
   }, [request])
 

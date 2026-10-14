@@ -109,8 +109,9 @@ function Browse({
     <div className="space-y-6">
       <section>
         <SectionTitle>Nearby</SectionTitle>
-        {position.status === 'ready' ? (
-          nearby.length ? (
+        <NearbyStatus position={position} />
+        {position.status === 'ready' &&
+          (nearby.length ? (
             <RestaurantList
               rows={nearby.map(({ r, d }) => ({ r, detail: formatDistance(d) }))}
               index={index}
@@ -118,18 +119,7 @@ function Browse({
             />
           ) : (
             <p className="text-sm text-muted">No saved restaurants within about a mile.</p>
-          )
-        ) : position.status === 'locating' ? (
-          <p className="text-sm text-muted">Finding you…</p>
-        ) : position.status === 'denied' ? (
-          <p className="text-sm text-muted">Location is off for this site. Turn it on in your browser settings to see nearby places.</p>
-        ) : position.status === 'unsupported' ? (
-          <p className="text-sm text-muted">This browser can’t share your location.</p>
-        ) : (
-          <button type="button" className="min-h-10 text-sm font-medium text-accent" onClick={position.request}>
-            📍 Show restaurants near me
-          </button>
-        )}
+          ))}
       </section>
 
       {recent.length > 0 && (
@@ -246,6 +236,47 @@ function SearchResults({ index, query, selected }: { index: BundleIndex; query: 
           </ul>
         </section>
       )}
+    </div>
+  )
+}
+
+/** The near-me button stays available in every state except while locating. */
+function NearbyStatus({ position }: { position: ReturnType<typeof usePosition> }) {
+  const { status, request } = position
+  if (status === 'unsupported') return <p className="text-sm text-muted">This browser can’t share your location.</p>
+  if (status === 'locating') return <p className="text-sm text-muted">Finding you…</p>
+  if (status === 'ready') {
+    return (
+      <button type="button" className="mb-2 min-h-10 text-sm text-accent" onClick={request}>
+        ↻ Refresh location
+      </button>
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      {status === 'denied' && !window.isSecureContext && (
+        <p className="text-sm text-muted">
+          Browsers only share location with secure (https) sites. It works at localhost on this computer, and will
+          work on your phone once the app is hosted online.
+        </p>
+      )}
+      {status === 'denied' && window.isSecureContext && (
+        <p className="text-sm text-muted">
+          Location is blocked for this site. To allow it, tap the icon at the left of the address bar, set
+          Location to <strong>Allow</strong>, then try again.
+        </p>
+      )}
+      {status === 'error' && (
+        <p className="text-sm text-muted">Couldn’t find your location. Check that location is on for this device.</p>
+      )}
+      <button
+        type="button"
+        className="inline-flex min-h-11 items-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-accent"
+        onClick={request}
+      >
+        📍 {status === 'idle' ? 'Show restaurants near me' : 'Try again'}
+      </button>
     </div>
   )
 }
