@@ -2,7 +2,9 @@ import { ErrorText, Spinner } from '@/components/ui'
 import { useAuth } from '@/lib/authContext'
 import { PersonFilterProvider } from '@/lib/personFilter'
 import { useMembers, useMyProfile } from '@/lib/queries'
+import { useOnline } from '@/lib/online'
 import { errorMessage } from '@/lib/supabase'
+import { OfflineBanner } from './OfflineBanner'
 import { Navigate, NavLink, Outlet } from 'react-router'
 
 /** Requires a session; everything else (household, onboarding) is checked by the children. */
@@ -16,7 +18,20 @@ export function RequireSession() {
 /** Main app: requires a household and a finished onboarding. */
 export function AppLayout() {
   const profile = useMyProfile()
+  const online = useOnline()
 
+  // A fresh install that has never synced has nothing to show offline (SPEC §9).
+  if (profile.isPending && !online) {
+    return (
+      <main className="mx-auto max-w-md space-y-3 p-6">
+        <h1 className="text-xl font-semibold">You’re offline</h1>
+        <p className="text-muted">
+          This device hasn’t downloaded your data yet. Connect to the internet once, and after that your saved
+          orders and cards work without a connection.
+        </p>
+      </main>
+    )
+  }
   if (profile.isPending) return <Spinner />
   if (profile.error) {
     return (
@@ -37,6 +52,7 @@ function Shell({ profileId, householdId }: { profileId: string; householdId: str
   return (
     <PersonFilterProvider defaultPerson={profileId} validIds={members?.map((m) => m.id)}>
       <div className="min-h-dvh pb-[calc(4.5rem+env(safe-area-inset-bottom))]">
+        <OfflineBanner />
         <main className="mx-auto max-w-md px-4 pt-6 pb-8">
           <Outlet />
         </main>

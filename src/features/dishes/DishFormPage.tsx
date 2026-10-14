@@ -146,16 +146,16 @@ function DishForm({ restaurantId, editing }: { restaurantId: string; editing?: E
       </Card>
 
       <ErrorText error={error} />
-      <Button type="submit" className="w-full" disabled={busy || !name.trim() || Boolean(duplicate)}>
+      <Button requiresOnline type="submit" className="w-full" disabled={busy || !name.trim() || Boolean(duplicate)}>
         {editing ? 'Save changes' : 'Add dish'}
       </Button>
 
       {editing && (
         <div className="flex flex-col gap-3 border-t border-border pt-5">
-          <Button type="button" variant="secondary" onClick={onArchive} disabled={busy}>
+          <Button requiresOnline type="button" variant="secondary" onClick={onArchive} disabled={busy}>
             {editing.archived ? 'Restore dish' : 'Archive (no longer on the menu)'}
           </Button>
-          <Button type="button" variant="danger" onClick={onDelete} disabled={remove.isPending}>
+          <Button requiresOnline type="button" variant="danger" onClick={onDelete} disabled={remove.isPending}>
             Delete permanently
           </Button>
         </div>

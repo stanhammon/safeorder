@@ -1,3 +1,4 @@
+import { useOnline } from '@/lib/online'
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from 'react'
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
@@ -12,11 +13,22 @@ const variants: Record<Variant, string> = {
 export function Button({
   variant = 'primary',
   className = '',
+  requiresOnline = false,
+  disabled,
+  title,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: Variant
+  /** Saves something: disabled while offline (SPEC §6.4, no offline writes). */
+  requiresOnline?: boolean
+}) {
+  const online = useOnline()
+  const blocked = requiresOnline && !online
   return (
     <button
       className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${variants[variant]} ${className}`}
+      disabled={disabled || blocked}
+      title={blocked ? 'Needs a connection' : title}
       {...props}
     />
   )

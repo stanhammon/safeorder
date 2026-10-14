@@ -207,16 +207,16 @@ function RestaurantForm({ editing }: { editing?: Editing }) {
       )}
 
       <ErrorText error={error} />
-      <Button type="submit" className="w-full" disabled={busy || !form.name.trim()}>
+      <Button requiresOnline type="submit" className="w-full" disabled={busy || !form.name.trim()}>
         {editing ? 'Save changes' : 'Add restaurant'}
       </Button>
 
       {editing && (
         <div className="flex flex-col gap-3 border-t border-border pt-5">
-          <Button type="button" variant="secondary" onClick={onArchive} disabled={busy}>
+          <Button requiresOnline type="button" variant="secondary" onClick={onArchive} disabled={busy}>
             {editing.restaurant.archived_at ? 'Restore restaurant' : 'Archive (closed or no longer go)'}
           </Button>
-          <Button type="button" variant="danger" onClick={onDelete} disabled={remove.isPending}>
+          <Button requiresOnline type="button" variant="danger" onClick={onDelete} disabled={remove.isPending}>
             Delete permanently
           </Button>
         </div>

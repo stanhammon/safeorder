@@ -10,6 +10,8 @@ import { useSearch } from '@/lib/search'
 import { errorMessage } from '@/lib/supabase'
 import type { Dish, MealOutcome, ModDraft, Profile, Restaurant } from '@/lib/types'
 import { useRef, useState, type ReactNode } from 'react'
+import { DraftNotice } from '@/components/DraftNotice'
+import { useDraft } from '@/lib/draft'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { ModEditor } from '../orders/ModEditor'
 import { useModContext } from '../orders/useModContext'
@@ -254,7 +256,7 @@ function DishPicker({
         </PickList>
       )}
       {q && !exact && (
-        <Button type="button" variant="secondary" className="w-full" onClick={addDish} disabled={create.isPending}>
+        <Button requiresOnline type="button" variant="secondary" className="w-full" onClick={addDish} disabled={create.isPending}>
           + Add “{query.trim()}” as a new dish
         </Button>
       )}
@@ -290,14 +292,27 @@ function MealForm({
   const savedMods: ModDraft[] = order ? (index.modsByOrder.get(order.id) ?? []).map((m) => ({ ...m })) : []
   const locations = (index.locationsByRestaurant.get(restaurant.id) ?? []).filter((l) => !l.archived_at)
 
-  const [mods, setMods] = useState<ModDraft[]>(savedMods)
-  const [rating, setRating] = useState<number | null>(null)
-  const [outcome, setOutcome] = useState<MealOutcome | null>(null)
-  const [outcomeNotes, setOutcomeNotes] = useState('')
-  const [price, setPrice] = useState('')
-  const [notes, setNotes] = useState('')
-  const [date, setDate] = useState(todayISO())
-  const [locationId, setLocationId] = useState(() => defaultLocation(index, restaurant.id, coords))
+  // Kept as a draft so a dropped connection or reload doesn't lose the form (SPEC §6.4).
+  const draft = useDraft(`log:${dish.id}:${person.id}`, () => ({
+    mods: savedMods,
+    rating: null as number | null,
+    outcome: null as MealOutcome | null,
+    outcomeNotes: '',
+    price: '',
+    notes: '',
+    date: todayISO(),
+    locationId: defaultLocation(index, restaurant.id, coords),
+  }))
+  const { mods, rating, outcome, outcomeNotes, price, notes, date, locationId } = draft.value
+  const patch = (p: Partial<typeof draft.value>) => draft.setValue((v) => ({ ...v, ...p }))
+  const setMods = (v: ModDraft[]) => patch({ mods: v })
+  const setRating = (v: number | null) => patch({ rating: v })
+  const setOutcome = (v: MealOutcome | null) => patch({ outcome: v })
+  const setOutcomeNotes = (v: string) => patch({ outcomeNotes: v })
+  const setPrice = (v: string) => patch({ price: v })
+  const setNotes = (v: string) => patch({ notes: v })
+  const setDate = (v: string) => patch({ date: v })
+  const setLocationId = (v: string | null) => patch({ locationId: v })
   const [confirming, setConfirming] = useState(false)
   const [offerClear, setOfferClear] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -349,6 +364,7 @@ function MealForm({
         },
         updateSafeOrder,
       })
+      draft.clear()
       // SPEC §5.4: a fine meal doesn't clear a reaction flag by itself; ask.
       if (order?.reaction_flag && outcome === 'fine') setOfferClear(true)
       else navigate(`/dishes/${dish.id}`, { replace: true })
@@ -360,6 +376,7 @@ function MealForm({
 
   return (
     <>
+      {draft.restored && <DraftNotice onDiscard={draft.discard} />}
       <section className="space-y-3">
         <div>
           <SectionTitle>{isMe ? 'Changes you asked for' : `Changes for ${person.display_name}`}</SectionTitle>
@@ -426,7 +443,7 @@ function MealForm({
       {priceCents != null && !Number.isNaN(priceCents) && price && (
         <p className="text-sm text-muted">Price: {formatMoney(priceCents, household?.default_currency ?? 'USD')}</p>
       )}
-      <Button className="w-full" onClick={onSave} disabled={logMeal.isPending}>
+      <Button requiresOnline className="w-full" onClick={onSave} disabled={logMeal.isPending}>
         {logMeal.isPending ? 'Saving…' : 'Save meal'}
       </Button>
 
@@ -441,7 +458,7 @@ function MealForm({
               this meal went fine?
             </p>
             <div className="flex flex-col gap-2">
-              <Button
+              <Button requiresOnline
                 disabled={clearFlag.isPending}
                 onClick={() =>
                   clearFlag.mutate(
@@ -470,8 +487,8 @@ function MealForm({
               This time’s changes differ from the saved order for {dish.name}. Use them from now on?
             </p>
             <div className="flex flex-col gap-2">
-              <Button onClick={() => submit(true)}>Update saved order</Button>
-              <Button variant="secondary" onClick={() => submit(false)}>
+              <Button requiresOnline onClick={() => submit(true)}>Update saved order</Button>
+              <Button requiresOnline variant="secondary" onClick={() => submit(false)}>
                 Just this meal
               </Button>
               <Button variant="ghost" onClick={() => setConfirming(false)}>

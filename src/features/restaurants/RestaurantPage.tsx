@@ -277,7 +277,7 @@ function ChainLocations({
             <Button type="button" variant="secondary" onClick={() => setAdding(false)}>
               Cancel
             </Button>
-            <Button type="button" className="flex-1" onClick={onAdd} disabled={add.isPending}>
+            <Button requiresOnline type="button" className="flex-1" onClick={onAdd} disabled={add.isPending}>
               Save location
             </Button>
           </div>

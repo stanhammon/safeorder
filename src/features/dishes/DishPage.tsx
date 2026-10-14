@@ -7,6 +7,7 @@ import { useAllergens, useHouseholdContext, useMembers } from '@/lib/queries'
 import { errorMessage } from '@/lib/supabase'
 import type { Coverage } from '@/lib/safety'
 import type { Dish, Meal, Profile, SafeOrder } from '@/lib/types'
+import { useOnline } from '@/lib/online'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { ModList } from '../orders/ModList'
@@ -287,6 +288,7 @@ function CoveragePanel({
 
 function StaleBanner({ order }: { order: SafeOrder }) {
   const confirmIt = useConfirmWithStaff()
+  const online = useOnline()
   const since = order.last_verified_at ?? order.created_at
   return (
     <div className="space-y-2 rounded-xl bg-warn-surface px-3 py-2 text-sm text-warn">
@@ -296,7 +298,7 @@ function StaleBanner({ order }: { order: SafeOrder }) {
       <button
         type="button"
         className="min-h-10 font-semibold underline"
-        disabled={confirmIt.isPending}
+        disabled={confirmIt.isPending || !online}
         onClick={() => confirmIt.mutate(order.id)}
       >
         ✓ Confirmed with staff today
@@ -332,7 +334,7 @@ function ReactionBanner({ order }: { order: SafeOrder }) {
             <Button variant="secondary" className="min-h-10" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button
+            <Button requiresOnline
               className="min-h-10 flex-1"
               disabled={clear.isPending}
               onClick={() =>

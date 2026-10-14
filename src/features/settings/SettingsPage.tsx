@@ -33,6 +33,7 @@ import {
 import { errorMessage } from '@/lib/supabase'
 import type { Household, Profile } from '@/lib/types'
 import { useState, type FormEvent } from 'react'
+import { InstallCard } from './InstallCard'
 
 export function SettingsPage() {
   const { profile, householdId } = useHouseholdContext()
@@ -47,6 +48,7 @@ export function SettingsPage() {
     <>
       <PageHeader title="Settings" />
       <div className="space-y-5">
+        <InstallCard />
         <AccountSection profile={profile} />
         <HouseholdSection household={household.data} isOwner={isOwner} />
         <MembersSection household={household.data} me={profile} isOwner={isOwner} />
@@ -189,7 +191,7 @@ function MembersSection({ household, me, isOwner }: { household: Household; me: 
             </span>
             {isOwner && m.id !== me.id && (
               <span className="flex gap-2">
-                <Button
+                <Button requiresOnline
                   variant="ghost"
                   className="min-h-9 px-2 text-sm"
                   onClick={() =>
@@ -199,7 +201,7 @@ function MembersSection({ household, me, isOwner }: { household: Household; me: 
                 >
                   Make owner
                 </Button>
-                <Button
+                <Button requiresOnline
                   variant="danger"
                   className="min-h-9 px-2 text-sm"
                   onClick={() =>
@@ -217,7 +219,7 @@ function MembersSection({ household, me, isOwner }: { household: Household; me: 
       </ul>
       <ErrorText error={error} />
       {!isOwner && (
-        <Button
+        <Button requiresOnline
           variant="danger"
           onClick={() =>
             confirm('Stop sharing? You will lose access to the shared restaurants and orders.') &&
@@ -284,7 +286,7 @@ function InvitesSection({ householdId }: { householdId: string }) {
           placeholder="partner@example.com"
           aria-label="Email to invite"
         />
-        <Button type="submit" disabled={create.isPending || !email.trim()}>
+        <Button requiresOnline type="submit" disabled={create.isPending || !email.trim()}>
           Invite
         </Button>
       </form>
@@ -302,7 +304,7 @@ function InvitesSection({ householdId }: { householdId: string }) {
               <Button variant="ghost" className="min-h-9 px-2 text-sm" onClick={() => share(inv.email)}>
                 {copied === inv.email ? 'Copied' : 'Send again'}
               </Button>
-              <Button
+              <Button requiresOnline
                 variant="danger"
                 className="min-h-9 px-2 text-sm"
                 onClick={() => revoke.mutate(inv.id, { onError: (e) => setError(errorMessage(e)) })}
@@ -372,7 +374,7 @@ function AllergenSection({ householdId }: { householdId: string }) {
                       if (v && v !== a.name) rename.mutate({ id: a.id, name: v }, { onError })
                     }}
                   />
-                  <Button
+                  <Button requiresOnline
                     variant="danger"
                     onClick={() => confirm(`Delete “${a.name}”?`) && remove.mutate(a.id, { onError })}
                   >

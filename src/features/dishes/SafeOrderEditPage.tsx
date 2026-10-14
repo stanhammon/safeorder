@@ -4,6 +4,8 @@ import { useBundle, useSaveSafeOrder, type BundleIndex } from '@/lib/bundle'
 import { useHouseholdContext, useMembers } from '@/lib/queries'
 import { errorMessage } from '@/lib/supabase'
 import type { Dish, ModDraft, Profile } from '@/lib/types'
+import { DraftNotice } from '@/components/DraftNotice'
+import { useDraft } from '@/lib/draft'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { ModEditor } from '../orders/ModEditor'
@@ -29,10 +31,13 @@ function Editor({ dish, person, index }: { dish: Dish; person: Profile; index: B
   const save = useSaveSafeOrder()
   const ctx = useModContext(index, person.id)
   const existing = index.orderByDishPerson.get(`${dish.id}:${person.id}`)
-  const [mods, setMods] = useState<ModDraft[]>(() =>
-    (existing ? (index.modsByOrder.get(existing.id) ?? []) : []).map((m) => ({ ...m })),
-  )
-  const [note, setNote] = useState(existing?.note ?? '')
+  const draft = useDraft(`order:${dish.id}:${person.id}`, () => ({
+    mods: (existing ? (index.modsByOrder.get(existing.id) ?? []) : []).map((m): ModDraft => ({ ...m })),
+    note: existing?.note ?? '',
+  }))
+  const { mods, note } = draft.value
+  const setMods = (v: ModDraft[]) => draft.setValue((d) => ({ ...d, mods: v }))
+  const setNote = (v: string) => draft.setValue((d) => ({ ...d, note: v }))
   const [error, setError] = useState<string | null>(null)
   const restaurant = index.restaurantById.get(dish.restaurant_id)
 
@@ -43,6 +48,7 @@ function Editor({ dish, person, index }: { dish: Dish; person: Profile; index: B
     }
     try {
       await save.mutateAsync({ dishId: dish.id, profileId: person.id, note, mods })
+      draft.clear()
       navigate(`/dishes/${dish.id}`, { replace: true })
     } catch (e) {
       setError(errorMessage(e))
@@ -56,6 +62,7 @@ function Editor({ dish, person, index }: { dish: Dish; person: Profile; index: B
         title={person.id === profile.id ? 'Your order' : `${person.display_name}’s order`}
         subtitle={`${dish.name} at ${restaurant?.name ?? ''}`}
       />
+      {draft.restored && <DraftNotice onDiscard={draft.discard} />}
       <ModEditor
         mods={mods}
         onChange={setMods}
@@ -76,7 +83,7 @@ function Editor({ dish, person, index }: { dish: Dish; person: Profile; index: B
         </label>
       </Card>
       <ErrorText error={error} />
-      <Button className="w-full" onClick={onSave} disabled={save.isPending}>
+      <Button requiresOnline className="w-full" onClick={onSave} disabled={save.isPending}>
         Save order
       </Button>
     </div>

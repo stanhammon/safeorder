@@ -154,7 +154,7 @@ function ChefMessage({ initial, initialEs }: { initial: string; initialEs: strin
       </label>
       <ErrorText error={error} />
       <div className="flex items-center gap-3">
-        <Button
+        <Button requiresOnline
           variant="secondary"
           disabled={update.isPending || unchanged}
           onClick={() =>

@@ -70,7 +70,7 @@ function OutcomeForm({ meal, index, onDone }: { meal: Meal; index: BundleIndex; 
         <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What happened?" />
       )}
       <ErrorText error={error} />
-      <Button
+      <Button requiresOnline
         className="w-full"
         disabled={!outcome || save.isPending}
         onClick={() =>

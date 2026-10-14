@@ -133,7 +133,7 @@ export function AllergyEditor({ householdId, profileId }: { householdId: string;
           maxLength={40}
           aria-label="Custom allergen name"
         />
-        <Button type="submit" variant="secondary" disabled={!newName.trim() || createAllergen.isPending}>
+        <Button requiresOnline type="submit" variant="secondary" disabled={!newName.trim() || createAllergen.isPending}>
           Add
         </Button>
       </form>

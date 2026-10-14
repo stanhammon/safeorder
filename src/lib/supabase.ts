@@ -17,11 +17,17 @@ export const supabase = createClient(url ?? 'http://localhost:54321', anonKey ??
   },
 })
 
+/** Where supabase-js keeps the session in localStorage (its default key). */
+export const authStorageKey = `sb-${new URL(url ?? 'http://localhost').hostname.split('.')[0]}-auth-token`
+
 /** Turn a Supabase/Postgres error into something worth showing a person. */
 export function errorMessage(error: unknown): string {
   if (!error) return 'Something went wrong'
   if (typeof error === 'object' && error !== null) {
     const e = error as { code?: string; message?: string }
+    if (/failed to fetch|networkerror|load failed|network request failed/i.test(e.message ?? '')) {
+      return 'You’re offline, so this wasn’t saved. Try again when you have a connection.'
+    }
     if (e.code === '23503') return 'This is still in use elsewhere, so it can’t be removed.'
     if (e.code === '23505') return 'That already exists.'
     if (e.message) return e.message

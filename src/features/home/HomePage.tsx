@@ -14,6 +14,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { OrderBadges } from '../orders/OrderBadges'
 import { useSafety } from '../orders/useSafety'
+import { InstallCard } from '../settings/InstallCard'
 import { OutcomeReminders } from './OutcomeReminders'
 
 const NEARBY_METERS = 2000
@@ -58,6 +59,7 @@ export function HomePage() {
         </EmptyState>
       ) : (
         <>
+          <HomeInstallPrompt />
           <OutcomeReminders index={index} />
           <Browse index={index} selected={selected} position={position} />
         </>
@@ -295,6 +297,35 @@ function NearbyStatus({ position }: { position: ReturnType<typeof usePosition> }
       >
         📍 {status === 'idle' ? 'Show restaurants near me' : 'Try again'}
       </button>
+    </div>
+  )
+}
+
+const INSTALL_DISMISSED_KEY = 'safeorder.installDismissed'
+
+/** One-time, dismissible install suggestion on Home; it stays available in Settings. */
+function HomeInstallPrompt() {
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return localStorage.getItem(INSTALL_DISMISSED_KEY) === '1'
+    } catch {
+      return false
+    }
+  })
+  if (dismissed) return null
+  return (
+    <div className="mb-6">
+      <InstallCard
+        compact
+        onDismiss={() => {
+          setDismissed(true)
+          try {
+            localStorage.setItem(INSTALL_DISMISSED_KEY, '1')
+          } catch {
+            // Not remembered; it'll show again next time.
+          }
+        }}
+      />
     </div>
   )
 }

@@ -2,7 +2,9 @@ import type { Session } from '@supabase/supabase-js'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type ReactNode } from 'react'
 import { AuthContext } from './authContext'
-import { supabase } from './supabase'
+import { DRAFT_PREFIX } from './draft'
+import { persister } from './persist'
+import { authStorageKey, supabase } from './supabase'
 
 /**
  * Finish a sign-in link redirect. Supabase sends people back with either
@@ -36,6 +38,28 @@ function completeRedirect(): Promise<string | null> {
   return redirectResult
 }
 
+/**
+ * The session saved on this device, used only while offline: getSession()
+ * returns null when an expired token can't be refreshed without a connection.
+ */
+function offlineSession(): Session | null {
+  if (navigator.onLine) return null
+  try {
+    const saved = JSON.parse(localStorage.getItem(authStorageKey) ?? 'null') as Session | null
+    return saved?.user?.id ? saved : null
+  } catch {
+    return null
+  }
+}
+
+function clearDrafts() {
+  try {
+    for (const key of Object.keys(localStorage)) if (key.startsWith(DRAFT_PREFIX)) localStorage.removeItem(key)
+  } catch {
+    // Storage unavailable: nothing to clear.
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const [session, setSession] = useState<Session | null>(null)
@@ -51,10 +75,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .then(({ data }) => {
         if (!active) return
-        setSession(data.session)
+        setSession(data.session ?? offlineSession())
         setLoading(false)
       })
-    const { data } = supabase.auth.onAuthStateChange((_event, next) => {
+    const { data } = supabase.auth.onAuthStateChange((event, next) => {
+      // Offline, an expired token can't be refreshed; keep the saved session
+      // rather than treating that as signing out (SPEC §6.4).
+      if (!next && event !== 'SIGNED_OUT' && !navigator.onLine) return
       setSession(next)
     })
     return () => {
@@ -65,8 +92,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signOut() {
     await supabase.auth.signOut()
-    // Shared phones: drop every cached household row on sign-out (SPEC §9).
+    // Shared phones: drop every cached household row and draft on sign-out (SPEC §9).
     queryClient.clear()
+    await persister.removeClient()
+    clearDrafts()
+    setSession(null)
   }
 
   return (

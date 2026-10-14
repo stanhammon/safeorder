@@ -2,7 +2,9 @@
 
 A mobile-first web app for a household to track what each person orders at restaurants and the modifications that avoid their food allergies. The full product spec is in [SPEC.md](SPEC.md).
 
-**Status:** Milestone 3 (Safety): full-screen server and allergy cards (English/Spanish), coverage warnings, re-confirm badges and reaction flags. Earlier milestones covered sign-in, sharing, allergies, restaurants, dishes, saved orders and meal logging.
+**Status:** Milestone 4 (Offline + installable): works offline after one sync (saved orders, server and allergy cards, search), can be installed on the home screen, and keeps unsaved form drafts. Earlier milestones: sign-in and sharing, allergies, restaurants, dishes, saved orders, meal logging, safety cards and warnings.
+
+**Live:** https://safeorder-five.vercel.app (deploys automatically from `master` on GitHub).
 
 ## Stack
 
@@ -45,6 +47,7 @@ React 19 + Vite + TypeScript, Tailwind CSS v4, React Router, TanStack Query, and
 | `npm run preview` | Serve the production build locally |
 | `npm run lint` | Lint with oxlint |
 | `npm test` | Run unit tests (Vitest) |
+| `npx pwa-assets-generator` | Regenerate the app icons in `public/` from `public/favicon.svg` |
 
 ## Notes
 
