@@ -377,6 +377,17 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
+-- Data API grants
+-- New Supabase projects no longer expose public tables automatically, so grant
+-- explicitly. Signed-in users get table access (RLS below decides which rows);
+-- anonymous visitors get nothing (share links go through an Edge Function).
+-- ---------------------------------------------------------------------------
+
+revoke all on all tables in schema public from anon;
+grant select, insert, update, delete on all tables in schema public to authenticated, service_role;
+grant execute on function public.current_household_id() to authenticated;
+
+-- ---------------------------------------------------------------------------
 -- Row level security
 -- ---------------------------------------------------------------------------
 

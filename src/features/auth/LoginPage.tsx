@@ -7,17 +7,15 @@ import { Navigate, useSearchParams } from 'react-router'
 const RESEND_SECONDS = 60
 
 export function LoginPage() {
-  const { session } = useAuth()
+  const { session, authError, clearAuthError } = useAuth()
   const [params] = useSearchParams()
   const [email, setEmail] = useState(params.get('email') ?? '')
   const [sentTo, setSentTo] = useState<string | null>(null)
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [cooldown, setCooldown] = useState(0)
-  const [error, setError] = useState<string | null>(
-    // Supabase reports failed magic links in the URL (e.g. expired link).
-    params.get('error_description') ?? new URLSearchParams(window.location.hash.slice(1)).get('error_description'),
-  )
+  const [localError, setError] = useState<string | null>(null)
+  const error = localError ?? authError
 
   useEffect(() => {
     if (cooldown <= 0) return
@@ -31,6 +29,7 @@ export function LoginPage() {
     e?.preventDefault()
     setBusy(true)
     setError(null)
+    clearAuthError()
     const target = email.trim()
     const { error } = await supabase.auth.signInWithOtp({
       email: target,

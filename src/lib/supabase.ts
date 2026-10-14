@@ -12,7 +12,8 @@ export const supabase = createClient(url ?? 'http://localhost:54321', anonKey ??
     flowType: 'pkce',
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true,
+    // Sign-in redirects are completed in auth.tsx so errors can be shown.
+    detectSessionInUrl: false,
   },
 })
 

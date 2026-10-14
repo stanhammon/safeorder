@@ -13,7 +13,7 @@ React 19 + Vite + TypeScript, Tailwind CSS v4, React Router, TanStack Query, and
 1. **Create a Supabase project** at <https://supabase.com> (the free tier is fine). Save the database password.
 2. **Configure auth** in the Supabase dashboard:
    - Under **Authentication → URL Configuration**, set **Site URL** to `http://localhost:5173` and add `http://localhost:5173/**` to **Redirect URLs**.
-   - Under **Authentication → Emails → Magic Link**, add the code to the template so people can sign in by typing it (needed for the installed phone app):
+   - *(Optional until the app is installed on phones. Supabase only lets you edit email templates after you set up custom SMTP; see Notes.)* Under **Authentication → Emails → Magic Link**, add the code to the template so people can sign in by typing it. Until then, open the sign-in link in the same browser where you requested it.
      ```html
      <h2>Sign in to SafeOrder</h2>
      <p><a href="{{ .ConfirmationURL }}">Sign in</a></p>
@@ -47,5 +47,5 @@ React 19 + Vite + TypeScript, Tailwind CSS v4, React Router, TanStack Query, and
 
 ## Notes
 
-- Supabase's built-in email sender is rate-limited to a few emails per hour. If sign-in emails stop arriving while testing, wait, or set up custom SMTP under **Authentication → Emails → SMTP Settings**.
+- Supabase's built-in email sender is rate-limited to a few emails per hour, and its templates can't be edited. Setting up custom SMTP under **Authentication → Emails → SMTP Settings** removes both limits. A free email service such as Resend or Brevo works. Do this before using the app on phones.
 - Invites don't send email: the app shares an invite message for you to send. The invited person signs in with the invited email and is offered to join.

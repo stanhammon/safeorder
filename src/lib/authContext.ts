@@ -4,6 +4,9 @@ import { createContext, useContext } from 'react'
 export interface AuthState {
   session: Session | null
   loading: boolean
+  /** Why the last sign-in link failed, if it did. */
+  authError: string | null
+  clearAuthError: () => void
   signOut: () => Promise<void>
 }
 
