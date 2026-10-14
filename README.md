@@ -2,7 +2,7 @@
 
 A mobile-first web app for a household to track what each person orders at restaurants and the modifications that avoid their food allergies. The full product spec is in [SPEC.md](SPEC.md).
 
-**Status:** Milestone 1 (Foundation): sign-in, households and invites, profiles, and allergy setup.
+**Status:** Milestone 2 (Core logging): restaurants and chain locations, dishes with allergen tags, saved orders, meal logging, search and Nearby. Milestone 1 covered sign-in, sharing, profiles and allergies.
 
 ## Stack
 
@@ -28,7 +28,7 @@ React 19 + Vite + TypeScript, Tailwind CSS v4, React Router, TanStack Query, and
      npx supabase link --project-ref <your-project-ref>
      npx supabase db push
      ```
-   - or paste the contents of `supabase/migrations/20261013000000_initial_schema.sql` into the dashboard's **SQL Editor** and run it.
+   - or paste each file in `supabase/migrations/` into the dashboard's **SQL Editor** and run them **one at a time, oldest first** (their names start with the date).
 5. **Install and run:**
    ```
    npm install
@@ -44,6 +44,7 @@ React 19 + Vite + TypeScript, Tailwind CSS v4, React Router, TanStack Query, and
 | `npm run build` | Type-check and build to `dist/` |
 | `npm run preview` | Serve the production build locally |
 | `npm run lint` | Lint with oxlint |
+| `npm test` | Run unit tests (Vitest) |
 
 ## Notes
 

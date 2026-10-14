@@ -1,6 +1,7 @@
 import { ErrorText, Spinner } from '@/components/ui'
 import { useAuth } from '@/lib/authContext'
-import { useMyProfile } from '@/lib/queries'
+import { PersonFilterProvider } from '@/lib/personFilter'
+import { useMembers, useMyProfile } from '@/lib/queries'
 import { errorMessage } from '@/lib/supabase'
 import { Navigate, NavLink, Outlet } from 'react-router'
 
@@ -28,13 +29,20 @@ export function AppLayout() {
     return <Navigate to="/onboarding" replace />
   }
 
+  return <Shell profileId={profile.data.id} householdId={profile.data.household_id} />
+}
+
+function Shell({ profileId, householdId }: { profileId: string; householdId: string }) {
+  const members = useMembers(householdId).data
   return (
-    <div className="min-h-dvh pb-[calc(4.5rem+env(safe-area-inset-bottom))]">
-      <main className="mx-auto max-w-md px-4 pt-6 pb-8">
-        <Outlet />
-      </main>
-      <TabBar />
-    </div>
+    <PersonFilterProvider defaultPerson={profileId} validIds={members?.map((m) => m.id)}>
+      <div className="min-h-dvh pb-[calc(4.5rem+env(safe-area-inset-bottom))]">
+        <main className="mx-auto max-w-md px-4 pt-6 pb-8">
+          <Outlet />
+        </main>
+        <TabBar />
+      </div>
+    </PersonFilterProvider>
   )
 }
 

@@ -1,7 +1,14 @@
 import { LoginPage } from '@/features/auth/LoginPage'
-import { HomePage, LogPage, NotFoundPage } from '@/features/home/HomePage'
+import { DishFormPage } from '@/features/dishes/DishFormPage'
+import { DishPage } from '@/features/dishes/DishPage'
+import { SafeOrderEditPage } from '@/features/dishes/SafeOrderEditPage'
+import { HomePage } from '@/features/home/HomePage'
+import { NotFoundPage } from '@/features/home/NotFoundPage'
+import { LogMealPage } from '@/features/log/LogMealPage'
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
 import { PeoplePage, PersonPage } from '@/features/people/PeoplePages'
+import { RestaurantFormPage } from '@/features/restaurants/RestaurantFormPage'
+import { RestaurantPage } from '@/features/restaurants/RestaurantPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
 import { createBrowserRouter } from 'react-router'
 import { AppLayout, RequireSession } from './AppLayout'
@@ -16,7 +23,14 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { index: true, element: <HomePage /> },
-          { path: 'log', element: <LogPage /> },
+          { path: 'log', element: <LogMealPage /> },
+          { path: 'restaurants/new', element: <RestaurantFormPage /> },
+          { path: 'restaurants/:restaurantId', element: <RestaurantPage /> },
+          { path: 'restaurants/:restaurantId/edit', element: <RestaurantFormPage /> },
+          { path: 'restaurants/:restaurantId/dishes/new', element: <DishFormPage /> },
+          { path: 'dishes/:dishId', element: <DishPage /> },
+          { path: 'dishes/:dishId/edit', element: <DishFormPage /> },
+          { path: 'dishes/:dishId/order/:personId', element: <SafeOrderEditPage /> },
           { path: 'people', element: <PeoplePage /> },
           { path: 'people/:personId', element: <PersonPage /> },
           { path: 'settings', element: <SettingsPage /> },

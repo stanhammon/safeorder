@@ -331,7 +331,7 @@ Bottom tabs: **Home** · **Log** (+) · **People** · **Settings**.
 
 **Restaurant detail**
 - Header: name, cuisine, chain badge, restaurant notes, and a location picker if it is a chain (defaults to the nearest).
-- **Your orders here** (for the selected person): list of dishes that have a safe order. Each row shows the dish name, a one-line mod summary ("No cheese · Sub GF bun"), and badges (stale, reaction, uncovered). Tapping a row opens Dish detail. A quick **Show server** button sits on each row.
+- **Your orders here** (for the selected person): list of dishes that have a safe order. Each row shows the dish name, a one-line mod summary ("No cheese · Sub GF bun"), the **average taste rating** across all rated meals of that dish with the count ("★ 4.3 (6)"; hidden when unrated, and also shown on "Other dishes" rows), and badges (stale, reaction, uncovered). Tapping a row opens Dish detail. A quick **Show server** button sits on each row.
 - **Other dishes**: dishes with no safe order for this person. These are other members' dishes or tagged-only dishes, collapsed by default.
 - FAB: **+ Dish**. Overflow menu: edit, add location, archive.
 
