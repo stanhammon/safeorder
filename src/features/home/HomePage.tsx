@@ -1,26 +1,25 @@
 import { Card, Disclaimer, PageHeader } from '@/components/ui'
-import { useHouseholdContext, useHousehold } from '@/lib/queries'
+import { useHouseholdContext } from '@/lib/queries'
 import { Link } from 'react-router'
 
 export function HomePage() {
-  const { profile, householdId } = useHouseholdContext()
-  const household = useHousehold(householdId)
+  const { profile } = useHouseholdContext()
 
   return (
     <>
-      <PageHeader title={`Hi, ${profile.display_name}`} subtitle={household.data?.name} />
+      <PageHeader title={`Hi, ${profile.display_name}`} />
       <Card className="space-y-2">
         <h2 className="font-semibold">Restaurants are coming next</h2>
         <p className="text-muted">
           Searching restaurants, saving your safe orders and logging meals arrive in the next milestone.
-          For now, set up your household and allergy profiles.
+          For now, set up your allergy profile.
         </p>
         <div className="flex gap-4 pt-1 text-sm">
-          <Link to="/people" className="text-accent">
-            Allergy profiles →
+          <Link to={`/people/${profile.id}`} className="text-accent">
+            My allergies →
           </Link>
           <Link to="/settings" className="text-accent">
-            Invite household →
+            Share with someone →
           </Link>
         </div>
       </Card>

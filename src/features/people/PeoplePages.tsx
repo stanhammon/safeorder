@@ -25,7 +25,7 @@ export function PeoplePage() {
 
   return (
     <>
-      <PageHeader title="People" subtitle="Everyone in your household and what they avoid." />
+      <PageHeader title="People" subtitle="You and anyone you share with, and what each person avoids." />
       <ul className="space-y-3">
         {members.data.map((m) => {
           const mine = personAllergens.data!.filter((pa) => pa.profile_id === m.id)
@@ -60,7 +60,7 @@ export function PeoplePage() {
         })}
       </ul>
       <p className="mt-4 text-sm text-muted">
-        To add someone, invite them from <Link to="/settings" className="text-accent">Settings</Link>.
+        To add someone, share with them from <Link to="/settings" className="text-accent">Settings</Link>.
       </p>
     </>
   )
@@ -78,7 +78,7 @@ export function PersonPage() {
   if (!person) {
     return (
       <>
-        <PageHeader title="Not found" subtitle="This person isn’t in your household." />
+        <PageHeader title="Not found" subtitle="You don’t share with this person." />
         <Link to="/people" className="text-accent">
           Back to people
         </Link>

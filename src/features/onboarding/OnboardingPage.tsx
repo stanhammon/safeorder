@@ -76,20 +76,20 @@ function HouseholdStep({ profile }: { profile: Profile }) {
   const invites = useMyInvites()
   const accept = useAcceptInvite()
   const create = useCreateHousehold()
-  const [name, setName] = useState(`${profile.display_name}’s household`)
   const [error, setError] = useState<string | null>(null)
 
+  // The shared group behind the scenes is named after its creator; people never see it.
   function onCreate(e: FormEvent) {
     e.preventDefault()
     setError(null)
-    create.mutate(name, { onError: (err) => setError(errorMessage(err)) })
+    create.mutate(profile.display_name, { onError: (err) => setError(errorMessage(err)) })
   }
 
   return (
     <>
       <PageHeader
         title="Welcome"
-        subtitle="Your household shares one list of restaurants and dishes. Everyone keeps their own allergy profile."
+        subtitle="Keep track of what you can order at restaurants, and exactly how to order it."
       />
       <ErrorText error={error} />
 
@@ -103,8 +103,8 @@ function HouseholdStep({ profile }: { profile: Profile }) {
             {invites.data.map((inv) => (
               <div key={inv.invite_id} className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="font-medium">{inv.household_name}</div>
-                  <div className="text-sm text-muted">Invited by {inv.invited_by_name}</div>
+                  <div className="font-medium">{inv.invited_by_name}</div>
+                  <div className="text-sm text-muted">wants to share their restaurants and orders with you</div>
                 </div>
                 <Button
                   disabled={accept.isPending}
@@ -123,21 +123,17 @@ function HouseholdStep({ profile }: { profile: Profile }) {
 
       <Card>
         <form onSubmit={onCreate} className="space-y-4">
-          <h2 className="font-semibold">Start a new household</h2>
-          <Field label="Household name">
-            <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} required />
-          </Field>
           <Button
             type="submit"
             variant={invites.data?.length ? 'secondary' : 'primary'}
             className="w-full"
-            disabled={create.isPending || !name.trim()}
+            disabled={create.isPending}
           >
-            Create household
+            {invites.data?.length ? 'Start on my own instead' : 'Get started'}
           </Button>
           <p className="text-sm text-muted">
-            Waiting to join someone else’s? Ask them to invite <strong>this email address</strong> from
-            Settings, then reload this page.
+            Expecting someone to share with you? Ask them to add <strong>this email address</strong> under
+            Settings → Share with someone, then reload this page.
           </p>
         </form>
       </Card>

@@ -57,6 +57,8 @@ The app is a **personal memory aid, not a safety guarantee**. It never says a di
 
 ## 3. Users & Roles
 
+> **Wording rule (decided 2026-10-14):** the UI never says "household". The app is written for an individual ("you", "your allergies"). Sharing appears only as an option: "Share with someone", "Shared with", "Leave shared list". "Household" stays an internal term in the schema and code.
+
 - **Household:** the top-level tenant. In v1 a user belongs to exactly one household.
 - **Member:** an authenticated user (`profiles` row tied to `auth.users`). Every member can read and write all household data, including other members' safe orders. This is useful when you order for a partner. Each member owns their own allergy profile, but any member may edit any profile; edits are recorded in `updated_by`.
 - **Owner:** whoever created the household. Only the owner can remove members, rename the household, or delete it. Ownership can be transferred.

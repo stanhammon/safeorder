@@ -109,7 +109,6 @@ function AccountSection({ profile }: { profile: Profile }) {
 
 function HouseholdSection({ household, isOwner }: { household: Household; isOwner: boolean }) {
   const update = useUpdateHousehold(household.id)
-  const [name, setName] = useState(household.name)
   const [months, setMonths] = useState(String(Math.round(household.stale_after_days / 30)))
   const [error, setError] = useState<string | null>(null)
 
@@ -120,17 +119,12 @@ function HouseholdSection({ household, isOwner }: { household: Household; isOwne
 
   return (
     <Card className="space-y-4">
-      <SectionTitle>Household</SectionTitle>
-      {!isOwner && <p className="text-sm text-muted">Only the household owner can change these.</p>}
-      <Field label="Name">
-        <Input
-          value={name}
-          maxLength={80}
-          disabled={!isOwner}
-          onChange={(e) => setName(e.target.value)}
-          onBlur={() => name.trim() && name.trim() !== household.name && save({ name: name.trim() })}
-        />
-      </Field>
+      <SectionTitle>Preferences</SectionTitle>
+      {!isOwner && (
+        <p className="text-sm text-muted">
+          These apply to everyone you share with. Only the owner of the shared list can change them.
+        </p>
+      )}
       <Field
         label="Ask to re-confirm orders after (months)"
         hint="A saved order not confirmed within this time shows “Re-confirm with staff”."
@@ -176,10 +170,14 @@ function MembersSection({ household, me, isOwner }: { household: Household; me: 
   const onError = (e: unknown) => setError(errorMessage(e))
 
   if (members.isPending) return <Spinner />
+  if ((members.data?.length ?? 0) <= 1) return null
 
   return (
     <Card className="space-y-3">
-      <SectionTitle>Members</SectionTitle>
+      <SectionTitle>Shared with</SectionTitle>
+      <p className="text-sm text-muted">
+        Everyone here sees the same restaurants and dishes. Each person keeps their own allergies and orders.
+      </p>
       <ul className="space-y-3">
         {members.data?.map((m) => (
           <li key={m.id} className="flex flex-wrap items-center gap-3">
@@ -195,7 +193,7 @@ function MembersSection({ household, me, isOwner }: { household: Household; me: 
                   variant="ghost"
                   className="min-h-9 px-2 text-sm"
                   onClick={() =>
-                    confirm(`Make ${m.display_name} the household owner? You will no longer be able to change household settings.`) &&
+                    confirm(`Make ${m.display_name} the owner of your shared list? Only they will be able to change shared preferences.`) &&
                     transfer.mutate(m.id, { onError })
                   }
                 >
@@ -206,11 +204,11 @@ function MembersSection({ household, me, isOwner }: { household: Household; me: 
                   className="min-h-9 px-2 text-sm"
                   onClick={() =>
                     confirm(
-                      `Remove ${m.display_name} from the household? They lose access immediately. Their saved orders and meals stay.`,
+                      `Stop sharing with ${m.display_name}? They lose access immediately. Their saved orders and meals stay.`,
                     ) && remove.mutate(m.id, { onError })
                   }
                 >
-                  Remove
+                  Stop sharing
                 </Button>
               </span>
             )}
@@ -222,11 +220,11 @@ function MembersSection({ household, me, isOwner }: { household: Household; me: 
         <Button
           variant="danger"
           onClick={() =>
-            confirm('Leave this household? You will lose access to its restaurants and orders.') &&
+            confirm('Stop sharing? You will lose access to the shared restaurants and orders.') &&
             leave.mutate(undefined, { onError })
           }
         >
-          Leave household
+          Leave shared list
         </Button>
       )}
     </Card>
@@ -243,7 +241,7 @@ function InvitesSection({ householdId }: { householdId: string }) {
 
   async function share(inviteEmail: string) {
     const url = `${window.location.origin}/login?email=${encodeURIComponent(inviteEmail)}`
-    const text = `Join our household on SafeOrder. Sign in with ${inviteEmail} here: ${url}`
+    const text = `I’m sharing my restaurant orders with you on SafeOrder. Sign in with ${inviteEmail} here: ${url}`
     if (navigator.share) {
       try {
         await navigator.share({ title: 'SafeOrder invite', text })
@@ -271,10 +269,11 @@ function InvitesSection({ householdId }: { householdId: string }) {
 
   return (
     <Card className="space-y-4">
-      <SectionTitle>Invite someone</SectionTitle>
+      <SectionTitle>Share with someone</SectionTitle>
       <p className="text-sm text-muted">
-        Add their email, then send them the invite message. When they sign in with that email, they’ll be
-        offered to join. Invites expire after 7 days.
+        Share your restaurants and dishes with a partner or family member. Each of you keeps your own
+        allergies and orders. Add their email, then send them the message. When they sign in with that
+        email, they’ll be asked to join you. Invites expire after 7 days.
       </p>
       <form onSubmit={onSubmit} className="flex gap-2">
         <Input
@@ -337,7 +336,7 @@ function AllergenSection({ householdId }: { householdId: string }) {
       <ErrorText error={error} />
       <div>
         <h3 className="mb-2 text-sm font-medium">Standard allergens</h3>
-        <p className="mb-2 text-sm text-muted">Untick any your household never needs, to shorten the lists.</p>
+        <p className="mb-2 text-sm text-muted">Untick any you never need, to shorten the lists.</p>
         <ul className="grid grid-cols-2 gap-x-4 gap-y-1">
           {presets.map((a) => (
             <li key={a.id}>
