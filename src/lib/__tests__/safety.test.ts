@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { allergenLabel, modInstruction } from '../cardText'
+import { allergenLabel, englishGloss, modInstruction } from '../cardText'
 import { coverage, isStale, safetyRank } from '../safety'
 import type { ModDraft, PersonAllergen } from '../types'
 
@@ -74,6 +74,11 @@ describe('card text', () => {
     expect(modInstruction(sub, 'es')).toEqual({ text: 'Cambiar pan por envuelto en lechuga (sin pan)', translated: true })
     expect(modInstruction({ action: 'on_the_side', item: 'dressing' }, 'en').text).toBe('dressing on the side')
     expect(modInstruction({ action: 'on_the_side', item: 'dressing' }, 'es').text).toBe('aderezo aparte')
+  })
+
+  it('glosses the English words for the parentheses', () => {
+    expect(englishGloss({ action: 'remove', item: ' dairy ' })).toBe('dairy')
+    expect(englishGloss({ action: 'substitute', item: 'bun', replacement: 'gluten-free bun' })).toBe('bun → gluten-free bun')
   })
 
   it('prefers the person’s own Spanish, and flags words it can’t translate', () => {

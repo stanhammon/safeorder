@@ -113,6 +113,12 @@ export function modInstruction(m: ModDraft, lang: CardLang): { text: string; tra
   return { text, translated: true }
 }
 
+/** The English words of a change, for the parentheses after the Spanish: "bun → gluten-free bun". */
+export function englishGloss(m: ModDraft): string {
+  const item = m.item.trim()
+  return m.action === 'substitute' ? `${item} → ${m.replacement?.trim() ?? ''}` : item
+}
+
 const STORAGE_KEY = 'safeorder.cardLang'
 
 export function readCardLang(): CardLang {

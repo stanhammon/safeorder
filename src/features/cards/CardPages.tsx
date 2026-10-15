@@ -1,6 +1,6 @@
 import { Spinner } from '@/components/ui'
 import { useBundle } from '@/lib/bundle'
-import { allergenLabel, CARD_TEXT, modInstruction, spanishFor, type CardLang } from '@/lib/cardText'
+import { allergenLabel, CARD_TEXT, englishGloss, modInstruction, spanishFor, type CardLang } from '@/lib/cardText'
 import { useAllergens, useHouseholdContext, useMembers, usePersonAllergens } from '@/lib/queries'
 import type { Allergen, PersonAllergen, Profile } from '@/lib/types'
 import { useState } from 'react'
@@ -97,16 +97,15 @@ export function ServerCardPage() {
                 <ul className="mt-[0.3em] space-y-[0.25em]">
                   {instructions.map((m, i) => {
                     const a = label(m.allergen_id)
+                    const line = modInstruction(m, lang)
                     return (
                       <li key={i} className="font-bold">
-                        → {modInstruction(m, lang).text}
-                        {a && <span className="text-[0.65em] font-medium"> ({a.text})</span>}
-                        {/* English underneath so a bad translation can't go unnoticed. */}
-                        {lang === 'es' && (
-                          <span className="block pl-[1.1em] text-[0.55em] font-medium opacity-70">
-                            {modInstruction(m, 'en').text}
-                          </span>
+                        → {line.text}
+                        {/* Spanish first, the English in parentheses so anyone can check it. */}
+                        {lang === 'es' && line.translated && (
+                          <span className="text-[0.7em] font-medium"> ({englishGloss(m)})</span>
                         )}
+                        {a && <span className="text-[0.6em] font-medium whitespace-nowrap"> · ⚠ {a.text}</span>}
                       </li>
                     )
                   })}
@@ -120,8 +119,8 @@ export function ServerCardPage() {
                   {questions.map((m, i) => (
                     <li key={i}>
                       ? {lang === 'es' ? spanishFor(m.item, m.item_es).text : m.item}
-                      {lang === 'es' && (
-                        <span className="block pl-[1.1em] text-[0.55em] opacity-70">{m.item}</span>
+                      {lang === 'es' && spanishFor(m.item, m.item_es).translated && (
+                        <span className="text-[0.7em]"> ({m.item.trim()})</span>
                       )}
                     </li>
                   ))}
