@@ -218,6 +218,8 @@ export function cleanMods(mods: ModDraft[]): ModDraft[] {
       allergen_id: m.allergen_id || null,
       allergen_name: m.allergen_name ?? null,
       note: m.note?.trim() || null,
+      item_es: m.item_es?.trim() || null,
+      replacement_es: m.action === 'substitute' ? m.replacement_es?.trim() || null : null,
     }))
 }
 

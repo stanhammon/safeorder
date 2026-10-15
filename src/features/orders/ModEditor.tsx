@@ -1,5 +1,6 @@
 import { Button, Input } from '@/components/ui'
 import { MOD_ACTIONS } from '@/lib/mods'
+import { translateItem } from '@/lib/spanishDictionary'
 import type { Allergen, ModAction, ModDraft } from '@/lib/types'
 import { useId, useState } from 'react'
 
@@ -154,15 +155,23 @@ function ModRow(props: {
         placeholder={itemPlaceholder[mod.action]}
         onChange={(e) => onUpdate({ item: e.target.value })}
       />
+      <SpanishField english={mod.item} value={mod.item_es} onChange={(v) => onUpdate({ item_es: v })} />
       {mod.action === 'substitute' && (
-        <Input
-          list={listId}
-          aria-label="Replace with"
-          value={mod.replacement ?? ''}
-          maxLength={200}
-          placeholder="Replace with, e.g. gluten-free bun"
-          onChange={(e) => onUpdate({ replacement: e.target.value })}
-        />
+        <>
+          <Input
+            list={listId}
+            aria-label="Replace with"
+            value={mod.replacement ?? ''}
+            maxLength={200}
+            placeholder="Replace with, e.g. gluten-free bun"
+            onChange={(e) => onUpdate({ replacement: e.target.value })}
+          />
+          <SpanishField
+            english={mod.replacement ?? ''}
+            value={mod.replacement_es}
+            onChange={(v) => onUpdate({ replacement_es: v })}
+          />
+        </>
       )}
 
       <select
@@ -220,5 +229,43 @@ function IconButton(props: { label: string; disabled?: boolean; onClick: () => v
     >
       {props.children}
     </button>
+  )
+}
+
+/**
+ * Optional Spanish for the server card. Blank uses the app's dictionary; the
+ * line below says what the card will actually show, so nothing is a surprise.
+ */
+function SpanishField({
+  english,
+  value,
+  onChange,
+}: {
+  english: string
+  value: string | null | undefined
+  onChange: (v: string | null) => void
+}) {
+  if (!english.trim()) return null
+  const own = value?.trim()
+  const auto = translateItem(english)
+  return (
+    <div className="space-y-1 pl-3">
+      <Input
+        lang="es"
+        aria-label={`“${english.trim()}” in Spanish`}
+        value={value ?? ''}
+        maxLength={200}
+        placeholder={auto ? `In Spanish: ${auto}` : 'In Spanish (optional)'}
+        className="min-h-10 text-sm"
+        onChange={(e) => onChange(e.target.value || null)}
+      />
+      <p className="text-xs text-muted">
+        {own
+          ? 'Spanish card uses your wording.'
+          : auto
+            ? `Spanish card will say “${auto}”. Type here to change it.`
+            : 'Not in the app’s dictionary, so the Spanish card shows this in English unless you type it here.'}
+      </p>
+    </div>
   )
 }

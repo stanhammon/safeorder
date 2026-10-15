@@ -121,6 +121,9 @@ export interface ModDraft {
   /** Snapshot only: name at the time, so history survives allergen renames. */
   allergen_name?: string | null
   note?: string | null
+  /** Optional Spanish wording for the card; blank uses the built-in dictionary. */
+  item_es?: string | null
+  replacement_es?: string | null
 }
 
 export interface Modification extends ModDraft {

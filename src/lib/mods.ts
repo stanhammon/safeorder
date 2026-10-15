@@ -51,7 +51,15 @@ export function summarizeMods(mods: ModDraft[]): string {
 }
 
 function modKey(m: ModDraft) {
-  return [m.action, m.item.trim().toLowerCase(), (m.replacement ?? '').trim().toLowerCase(), m.allergen_id ?? '', (m.note ?? '').trim()].join('|')
+  return [
+    m.action,
+    m.item.trim().toLowerCase(),
+    (m.replacement ?? '').trim().toLowerCase(),
+    m.allergen_id ?? '',
+    (m.note ?? '').trim(),
+    (m.item_es ?? '').trim().toLowerCase(),
+    (m.replacement_es ?? '').trim().toLowerCase(),
+  ].join('|')
 }
 
 /** Same mods in the same order (ignores whitespace and case). */

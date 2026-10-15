@@ -1,6 +1,6 @@
 import { Spinner } from '@/components/ui'
 import { useBundle } from '@/lib/bundle'
-import { allergenLabel, CARD_TEXT, modInstruction, type CardLang } from '@/lib/cardText'
+import { allergenLabel, CARD_TEXT, modInstruction, spanishFor, type CardLang } from '@/lib/cardText'
 import { useAllergens, useHouseholdContext, useMembers, usePersonAllergens } from '@/lib/queries'
 import type { Allergen, PersonAllergen, Profile } from '@/lib/types'
 import { useState } from 'react'
@@ -77,7 +77,8 @@ export function ServerCardPage() {
         }
         const untranslated =
           lang === 'es' &&
-          (mods.length > 0 || allergies.some((pa) => !label(pa.allergen_id)?.translated))
+          (mods.some((m) => !modInstruction(m, 'es').translated) ||
+            allergies.some((pa) => !label(pa.allergen_id)?.translated))
         return (
           <div className="space-y-[0.7em]">
             {allergies.length > 0 && (
@@ -98,8 +99,14 @@ export function ServerCardPage() {
                     const a = label(m.allergen_id)
                     return (
                       <li key={i} className="font-bold">
-                        → {modInstruction(m, lang)}
+                        → {modInstruction(m, lang).text}
                         {a && <span className="text-[0.65em] font-medium"> ({a.text})</span>}
+                        {/* English underneath so a bad translation can't go unnoticed. */}
+                        {lang === 'es' && (
+                          <span className="block pl-[1.1em] text-[0.55em] font-medium opacity-70">
+                            {modInstruction(m, 'en').text}
+                          </span>
+                        )}
                       </li>
                     )
                   })}
@@ -111,7 +118,12 @@ export function ServerCardPage() {
                 <p className="text-[0.7em] font-semibold">{t.pleaseCheck}</p>
                 <ul className="space-y-[0.2em]">
                   {questions.map((m, i) => (
-                    <li key={i}>? {m.item}</li>
+                    <li key={i}>
+                      ? {lang === 'es' ? spanishFor(m.item, m.item_es).text : m.item}
+                      {lang === 'es' && (
+                        <span className="block pl-[1.1em] text-[0.55em] opacity-70">{m.item}</span>
+                      )}
+                    </li>
                   ))}
                 </ul>
               </section>

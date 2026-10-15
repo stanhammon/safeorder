@@ -70,9 +70,19 @@ describe('card text', () => {
 
   it('writes changes as instructions in both languages', () => {
     const sub: ModDraft = { action: 'substitute', item: 'bun', replacement: 'lettuce wrap' }
-    expect(modInstruction(sub, 'en')).toBe('Replace bun with lettuce wrap')
-    expect(modInstruction(sub, 'es')).toBe('Cambiar bun por lettuce wrap')
-    expect(modInstruction({ action: 'remove', item: 'queso' }, 'es')).toBe('Sin queso')
-    expect(modInstruction({ action: 'on_the_side', item: 'dressing' }, 'en')).toBe('dressing on the side')
+    expect(modInstruction(sub, 'en').text).toBe('Replace bun with lettuce wrap')
+    expect(modInstruction(sub, 'es')).toEqual({ text: 'Cambiar pan por envuelto en lechuga (sin pan)', translated: true })
+    expect(modInstruction({ action: 'on_the_side', item: 'dressing' }, 'en').text).toBe('dressing on the side')
+    expect(modInstruction({ action: 'on_the_side', item: 'dressing' }, 'es').text).toBe('aderezo aparte')
+  })
+
+  it('prefers the person’s own Spanish, and flags words it can’t translate', () => {
+    expect(modInstruction({ action: 'remove', item: 'cheese', item_es: 'queso amarillo' }, 'es').text).toBe('Sin queso amarillo')
+    expect(modInstruction({ action: 'remove', item: 'the crispy shallots' }, 'es')).toEqual({
+      text: 'Sin the crispy shallots',
+      translated: false,
+    })
+    // A substitution is only fully translated when both sides are.
+    expect(modInstruction({ action: 'substitute', item: 'bun', replacement: 'focaccia' }, 'es').translated).toBe(false)
   })
 })

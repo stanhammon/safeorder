@@ -1,3 +1,4 @@
+import { translateItem } from './spanishDictionary'
 import type { Allergen, ModDraft } from './types'
 
 /** Languages the staff-facing cards can show. */
@@ -62,36 +63,54 @@ export const CARD_TEXT = {
   },
 } as const
 
-/** A change as an instruction to staff. Free-text parts stay as typed. */
-export function modInstruction(m: ModDraft, lang: CardLang): string {
-  const item = m.item.trim()
-  const replacement = m.replacement?.trim() ?? ''
+/** Spanish for a typed item: the person's own wording, else the dictionary. */
+export function spanishFor(english: string, override?: string | null): { text: string; translated: boolean } {
+  const own = override?.trim()
+  if (own) return { text: own, translated: true }
+  const dict = translateItem(english)
+  return dict ? { text: dict, translated: true } : { text: english.trim(), translated: false }
+}
+
+/**
+ * A change as an instruction to staff. In Spanish, typed words come from the
+ * change's own Spanish wording or the dictionary; anything unknown stays in
+ * English and `translated` is false.
+ */
+export function modInstruction(m: ModDraft, lang: CardLang): { text: string; translated: boolean } {
   if (lang === 'es') {
+    const item = spanishFor(m.item, m.item_es)
+    const replacement = spanishFor(m.replacement ?? '', m.replacement_es)
+    const both = item.translated && (m.action !== 'substitute' || replacement.translated)
     switch (m.action) {
       case 'remove':
-        return `Sin ${item}`
+        return { text: `Sin ${item.text}`, translated: item.translated }
       case 'substitute':
-        return `Cambiar ${item} por ${replacement}`
+        return { text: `Cambiar ${item.text} por ${replacement.text}`, translated: both }
       case 'add':
-        return `Agregar ${item}`
+        return { text: `Agregar ${item.text}`, translated: item.translated }
       case 'on_the_side':
-        return `${item} aparte`
+        return { text: `${item.text} aparte`, translated: item.translated }
       default:
         return item
     }
   }
-  switch (m.action) {
-    case 'remove':
-      return `No ${item}`
-    case 'substitute':
-      return `Replace ${item} with ${replacement}`
-    case 'add':
-      return `Add ${item}`
-    case 'on_the_side':
-      return `${item} on the side`
-    default:
-      return item
-  }
+  const item = m.item.trim()
+  const replacement = m.replacement?.trim() ?? ''
+  const text = (() => {
+    switch (m.action) {
+      case 'remove':
+        return `No ${item}`
+      case 'substitute':
+        return `Replace ${item} with ${replacement}`
+      case 'add':
+        return `Add ${item}`
+      case 'on_the_side':
+        return `${item} on the side`
+      default:
+        return item
+    }
+  })()
+  return { text, translated: true }
 }
 
 const STORAGE_KEY = 'safeorder.cardLang'
